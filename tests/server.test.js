@@ -49,6 +49,7 @@ Deno.test("getResponseDefinition", async () => {
 Deno.test("resolveBody", async () => {
   let bodyHandler = async ({ inc }) => inc + 1;
   let bodyTest = await resolveBody({ bodyHandler, params: { inc: 1 } });
+  assertEquals(bodyTest, { body: 2 });
 
   bodyHandler = "body";
   bodyTest = await resolveBody({ bodyHandler });
