@@ -1,0 +1,21 @@
+{
+  "genres": [
+    "comedy",
+    "thriller",
+    "drama"
+  ],
+  "laptops": [
+    { 
+      "id": 123,
+      "brand": "dell"
+    },
+    {
+      "id": 2321,
+      "brand": "lenovo"
+    }
+  ],
+  "color": {
+    "dark": "blue",
+    "light": "red"
+  }
+}
