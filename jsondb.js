@@ -1,10 +1,11 @@
-import { R, readJson, readFileStr, fileExists, pathToRegexp } from "./deps.js";
-import { asyncCompose } from "./utils.js";
+import { readJson, readFileStr, fileExists } from "./deps.js";
+import * as U from "./utils.js";
 
 export const readJsonDb = async (dbPathname = "./db.json") => {
   const content = await readFileStr(dbPathname);
-  if (R.isEmpty(content)) {
-    return {};
+  if (U.isEmpty(content)) {
+    console.warn("warn: ", "Content is empty");
+    return { json: {} };
   }
   try {
     const json = await readJson(dbPathname);
@@ -27,22 +28,21 @@ export const checkJsonDb = async (dbPathname = "./db.json") => {
 };
 
 const tryDirectLens = ({ lensPath, json }) => {
-  const data = R.view(R.lensPath(lensPath), json);
+  const data = U.path(lensPath, json);
   return { lensPath, data, json };
 };
 
-const tryRestful = ({ lensPath, data, json, next = false }) => {
-  if (!R.isNil(data) && !next) {
+export const tryRestful = ({ lensPath, data, json, next = false }) => {
+  if (!U.isNil(data) && !next) {
     return { data };
   }
-  const singlePathItem = R.head(lensPath);
-  const restPathItems = R.tail(lensPath);
+  const [singlePathItem, ...restPathItems] = lensPath;
   const dataPayload = data || json;
   let maybeNextItem;
-  if (R.type(data) === "Array") {
-    maybeNextItem = R.find((item) => item.id == singlePathItem)(dataPayload);
-  } else if (R.type(data) === "Object" || R.isNil(data)) {
-    maybeNextItem = R.view(R.lensPath([singlePathItem]), dataPayload);
+  if (U.isArray(data)) {
+    maybeNextItem = dataPayload.find((item) => item.id == singlePathItem);
+  } else if (U.isNil(data) || U.isObject(data)) {
+    maybeNextItem = U.path([singlePathItem], dataPayload);
   }
   if (restPathItems.length > 0) {
     return tryRestful({
@@ -60,22 +60,35 @@ const tryProps = ({ data }) => {
   return { data };
 };
 
-const handleJson = R.compose(tryProps, tryRestful, tryDirectLens);
+const serveResponse = ({ data }) => {
+  if (U.isArray(data)) {
+    return { response: [...data] };
+  } else if (U.isObject(data)) {
+    return { response: { ...data } };
+  }
+  return { response: data };
+};
+
+const handleJson = U.compose(
+  serveResponse,
+  tryProps,
+  tryRestful,
+  tryDirectLens
+);
 
 const handler = (props) => {
-  const { url } = props.ctx.req;
+  const { url, method } = props.ctx.req;
   const { pathPattern } = props.ctx;
-  if (R.is(Object)(props.json)) {
-    const path = R.replace(pathPattern, "", url);
-    if (R.isEmpty(path)) {
+  if (U.isObject(props.json)) {
+    const path = url.replace(pathPattern, "");
+    if (U.isEmpty(path)) {
       return {
-        body: props.json,
+        body: serveResponse({ data: props.json }),
       };
     } else {
       const lensPath = path.split("/").filter((x) => x);
       const payload = handleJson({ lensPath, json: props.json });
-      console.log("payload", payload);
-      return { body: { ...payload } };
+      return { body: payload };
     }
   }
   return {
@@ -83,7 +96,7 @@ const handler = (props) => {
   };
 };
 
-const processJsonOrContent = (file) => asyncCompose(handler)(file);
+const processJsonOrContent = (file) => U.asyncCompose(handler)(file);
 
 const jsondb = (
   process = processJsonOrContent,
@@ -96,10 +109,9 @@ const jsondb = (
       fileContent: file.fileContent,
       ctx,
     });
-    if (file.json && R.isNil(R.path(["body", "data"])(res))) {
-      return R.set(R.lensPath(["status"]), 404)(res);
+    if (file.json && U.isEmpty(U.path(["body", "response"], res))) {
+      return U.setTo(res, { status: 404 });
     }
-    console.log("---res", res);
     return { ...res };
   }
   return { status: 404 };

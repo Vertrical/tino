@@ -1,10 +1,15 @@
 import json_server, { compose, tap, localdb, jsondb } from "./json_server.js";
+import { R } from "./deps.js";
 
 const app = json_server.create();
 
 // minimal configuration:
 // app.any(() => ({ path: "/ping/:id", use: ({ params }) => ({ body: params }) }));
 app.any(() => ({ path: "/api", status: 404 }));
+app.any(() => ({
+  path: "/hello/:from",
+  body: ({ params, query }) => `From ${params.from} to ${query.who}!`,
+}));
 app.any(() => ({ path: "/myapi", use: jsondb() }));
 app.get(() => ({ path: "/func", body: () => "return" }));
 app.get(() => ({ path: "/async", body: async () => ({ dev: "async" }) }));
@@ -22,3 +27,5 @@ app.not_found(() => ({ body: () => "Oops" }));
 console.log(app.getState());
 
 json_server.listen({ app, port: 8000 });
+
+// fetch('http://localhost:8000/myapi/genres').then(json => json.json()).then(console.log)

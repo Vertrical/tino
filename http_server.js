@@ -15,6 +15,38 @@ const destructDeps = ({ serve, app, port = 8000 }) => {
   return { server, state };
 };
 
+const prepareContext = ({ req, state }) => {
+  const url = req.url;
+  const baseUrl = url.split("?")[0];
+  const queryParamsString = url.split("?")[1];
+  const responseDefinition = {
+    params: {},
+    query: {},
+  };
+  for (const [pathPattern, pathArgs] of state) {
+    const matchedPath = parsePath({
+      matcher: pathToRegexp.match,
+      path: pathPattern,
+      url: baseUrl,
+    });
+    responseDefinition.params = { ...matchedPath.params };
+    const _method = req.method.toLowerCase();
+    const _hasMethod = pathArgs[_method] || pathArgs["any"];
+    if (R.has("path")(matchedPath) && _hasMethod) {
+      const endpointArgs = pathArgs[_method] || pathArgs["any"];
+      Object.assign(responseDefinition, endpointArgs);
+      break;
+    }
+  }
+  if (queryParamsString) {
+    const searchQueryParams = new URLSearchParams(queryParamsString);
+    for (const [queryName, queryValue] of searchQueryParams) {
+      Object.assign(responseDefinition.query, { [queryName]: queryValue });
+    }
+  }
+  return { ctx: { req, state }, ...responseDefinition };
+};
+
 export const handleBody = ({ req, state }) => {
   const url = req.url;
   let _def = {};
@@ -46,7 +78,6 @@ const _pickUse = R.compose(
 
 const execMaybeHandler = async ({ maybeFunction, ctx }) => {
   let res;
-  // console.log('props', props)
   if (R.type(maybeFunction) === "AsyncFunction") {
     res = await maybeFunction({ ...ctx });
   } else {
@@ -68,7 +99,6 @@ const handleUse = async ({ ctx, ...responseDefinition }) => {
           maybeFunction: _useHandler,
           ctx: { ...ctx, pathPattern },
         });
-        // console.log("handlerCallResult", handlerCallResult);
         Object.assign(responseDefinition, handlerCallResult);
         break;
       }
@@ -142,7 +172,7 @@ export const processRequest = asyncCompose(
   resolveBody,
   handleNotFound,
   handleUse,
-  handleBody
+  prepareContext
 );
 
 export const listen = async ({ app, port = 8000 }) => {
