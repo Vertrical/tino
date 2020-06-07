@@ -1,11 +1,10 @@
 import json_server, { compose, tap, localdb, jsondb } from "./json_server.js";
-import { R } from "./deps.js";
 
 const app = json_server.create();
 
 // minimal configuration:
 // app.any(() => ({ path: "/ping/:id", use: ({ params }) => ({ body: params }) }));
-app.any(() => ({ path: "/api", status: 404 }));
+// app.any(() => ({ path: "/api", status: 404 }));
 app.any(() => ({
   path: "/hello/:from",
   body: ({ params, query }) => `From ${params.from} to ${query.who}!`,

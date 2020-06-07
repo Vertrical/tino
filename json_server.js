@@ -1,23 +1,21 @@
-import { R } from "./deps.js";
 import { listen } from "./http_server.js";
 import jsondb from "./jsondb.js";
+import * as U from "./utils.js";
 
-export { jsondb }
+export { jsondb };
 
 const state = new Map();
 
-state.set("/api", { any: { use: jsondb } });
+state.set("/api", { any: { use: jsondb() } });
 
 const getState = () => state;
 
-const getStatePath = (path) => state.get(path) || {};
-
 const setState = (path, { method, body, ...props }) => {
-  const statePath = getStatePath(path);
-  if (!method) {
-    state.set(props.status, { body, ...R.dissoc("status")(props) });
+  if (!method && props.status) {
+    state.set(props.status, { body, ...U.dissoc("status", props) });
   } else {
-    state.set(path, R.set(R.lensPath([method]), { body, ...props }, statePath));
+    const pathDefinition = { [method]: { body, ...props } };
+    state.set(path, pathDefinition);
   }
   return state;
 };
@@ -45,10 +43,10 @@ const updateNotFoundState = () => ({ path, body, dispatch }) => {
 };
 
 const methodHandler = (method) =>
-  R.compose(updateState(method), useDispatch, resolveConfig);
+  U.compose(updateState(method), useDispatch, resolveConfig);
 
 const notFoundHandler = () =>
-  R.compose(updateNotFoundState(), useDispatch, resolveConfig);
+  U.compose(updateNotFoundState(), useDispatch, resolveConfig);
 
 const jsonserverHandlers = () => ({
   get: methodHandler("get"),

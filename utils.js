@@ -1,3 +1,15 @@
+const _curry = (func) => {
+  return function curried(...args) {
+    if (args.length >= func.length) {
+      return func.apply(this, args);
+    } else {
+      return function (...args2) {
+        return curried.apply(this, args.concat(args2));
+      };
+    }
+  };
+};
+
 export const asyncCompose = (...functions) => (input) =>
   functions.reduceRight(
     (chain, func) => chain.then(func),
@@ -13,8 +25,17 @@ export const isObject = (obj) =>
 export const isArray = (obj) =>
   Object.prototype.toString.call(obj) === "[object Array]";
 
-export const path = (p, o) =>
-  p.reduce((xs, x) => (xs && xs[x] ? xs[x] : null), o);
+export const isFunction = (obj) =>
+  Object.prototype.toString.call(obj) === "[object Function]";
+
+export const isAsyncFunction = (obj) =>
+  Object.prototype.toString.call(obj) === "[object AsyncFunction]";
+
+export const path = _curry((p, o) =>
+  p.reduce((xs, x) => (xs && xs[x] ? xs[x] : null), o)
+);
+
+export const hasPath = (p, o) => path(p, o) == null;
 
 export const isEmpty = (obj) => {
   for (var key in obj) {
@@ -33,3 +54,27 @@ export const isNil = (obj) => {
 };
 
 export const setTo = (obj, chunk) => Object.assign({}, obj, chunk);
+
+export const tryCatch = (fn1, fn2) => {
+  try {
+    return fn1();
+  } catch (_e) {
+    return fn2();
+  }
+};
+
+export const pickBy = (o, prop) => Object.keys(o).find;
+
+export const tap = _curry((logger, any) => {
+  logger(any);
+  return any;
+});
+
+export const dissoc = (prop, o) => {
+  var result = {};
+  for (var p in o) {
+    result[p] = o[p];
+  }
+  delete result[prop];
+  return result;
+}

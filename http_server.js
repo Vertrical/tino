@@ -1,12 +1,12 @@
-import { R, pathToRegexp } from "./deps.js";
+import { pathToRegexp } from "./deps.js";
 import { serve } from "https://deno.land/std@0.50.0/http/server.ts";
-import { asyncCompose } from "./utils.js";
+import * as U from "./utils.js";
 
-const parsePath = ({ matcher, path, url }) => {
-  return R.tryCatch(
+const tryParsePath = ({ matcher, path, url }) => {
+  return U.tryCatch(
     () => matcher(path, { decode: decodeURIComponent })(url),
     () => false
-  )();
+  );
 };
 
 const destructDeps = ({ serve, app, port = 8000 }) => {
@@ -24,18 +24,20 @@ const prepareContext = ({ req, state }) => {
     query: {},
   };
   for (const [pathPattern, pathArgs] of state) {
-    const matchedPath = parsePath({
+    const matchedPath = tryParsePath({
       matcher: pathToRegexp.match,
       path: pathPattern,
       url: baseUrl,
     });
-    responseDefinition.params = { ...matchedPath.params };
-    const _method = req.method.toLowerCase();
-    const _hasMethod = pathArgs[_method] || pathArgs["any"];
-    if (R.has("path")(matchedPath) && _hasMethod) {
-      const endpointArgs = pathArgs[_method] || pathArgs["any"];
-      Object.assign(responseDefinition, endpointArgs);
-      break;
+    if (U.isObject(matchedPath)) {
+      responseDefinition.params = { ...matchedPath.params };
+      const _method = req.method.toLowerCase();
+      const _hasMethod = pathArgs[_method] || pathArgs["any"];
+      if (U.hasPath(["path"], matchedPath) && _hasMethod) {
+        const endpointArgs = pathArgs[_method] || pathArgs["any"];
+        Object.assign(responseDefinition, endpointArgs);
+        break;
+      }
     }
   }
   if (queryParamsString) {
@@ -47,44 +49,20 @@ const prepareContext = ({ req, state }) => {
   return { ctx: { req, state }, ...responseDefinition };
 };
 
-export const handleBody = ({ req, state }) => {
-  const url = req.url;
-  let _def = {};
-  const responseDefinition = _def;
-  for (const [pathPattern, pathArgs] of state) {
-    const matchedPath = parsePath({
-      matcher: pathToRegexp.match,
-      path: pathPattern,
-      url,
-    });
-    responseDefinition.params = { ...matchedPath.params };
-    const _method = req.method.toLowerCase();
-    const _hasMethod = pathArgs[_method] || pathArgs["any"];
-    if (R.has("path")(matchedPath) && _hasMethod) {
-      const endpointArgs = pathArgs[_method] || pathArgs["any"];
-      Object.assign(_def, endpointArgs);
-      break;
-    }
-  }
-  return { ctx: { req, state }, ...responseDefinition };
-};
-
-const _pickUse = R.compose(
-  R.prop("use"),
-  R.pickBy((_v, key) => key === "use"),
-  R.head,
-  R.values
+const _pickUse = U.compose(
+  U.path(["use"]),
+  ([head, ..._tail]) => head,
+  Object.values
 );
 
 const execMaybeHandler = async ({ maybeFunction, ctx }) => {
   let res;
-  if (R.type(maybeFunction) === "AsyncFunction") {
+  if (U.isAsyncFunction(maybeFunction)) {
     res = await maybeFunction({ ...ctx });
   } else {
-    res =
-      R.type(maybeFunction) === "Function"
-        ? maybeFunction({ ...ctx })
-        : maybeFunction;
+    res = U.isFunction(maybeFunction)
+      ? maybeFunction({ ...ctx })
+      : maybeFunction;
   }
   return res;
 };
@@ -108,7 +86,7 @@ const handleUse = async ({ ctx, ...responseDefinition }) => {
 };
 
 const handleNotFound = ({ ctx, ...responseDefinition }) => {
-  if (ctx.state.has(404) && !R.has("body", responseDefinition)) {
+  if (ctx.state.has(404) && !responseDefinition.body) {
     return {
       ...responseDefinition,
       status: 404,
@@ -125,15 +103,13 @@ export const resolveBody = async ({
   ctx,
   ...props
 }) => {
-  const bodyHandlerType = R.type(bodyOrHandler);
   let body;
-  if (bodyHandlerType === "AsyncFunction") {
+  if (U.isAsyncFunction(bodyOrHandler)) {
     body = await bodyOrHandler({ params, ctx, ...props });
   } else {
-    body =
-      bodyHandlerType === "Function"
-        ? bodyOrHandler({ params, ctx, ...props })
-        : bodyOrHandler;
+    body = U.isFunction(bodyOrHandler)
+      ? bodyOrHandler({ params, ctx, ...props })
+      : bodyOrHandler;
   }
   if (status) {
     return { body, status };
@@ -146,16 +122,16 @@ export const resolveBody = async ({
 
 export const createResponder = async ({ body, status, ...props }) => {
   const responderObject = { body };
-  if (R.type(body) === "AsyncFunction") {
+  if (U.isAsyncFunction(body)) {
     const _body = await body();
     responderObject.body = _body;
-  } else if (R.type(body) === "Object" || R.type(body) === "Array") {
+  } else if (U.isObject(body) || U.isArray(body)) {
     responderObject.body = { ...body };
-  } else if (R.type(body) === "Function") {
+  } else if (U.isFunction(body)) {
     const _body = body();
     responderObject.body = _body;
   }
-  if (R.type(responderObject.body) === "Object") {
+  if (U.isObject(responderObject.body)) {
     responderObject.body = JSON.stringify(responderObject.body);
     responderObject.headers = new Headers({
       "content-type": "application/json",
@@ -167,7 +143,7 @@ export const createResponder = async ({ body, status, ...props }) => {
   return responderObject;
 };
 
-export const processRequest = asyncCompose(
+export const processRequest = U.asyncCompose(
   createResponder,
   resolveBody,
   handleNotFound,
