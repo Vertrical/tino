@@ -52,11 +52,11 @@ export const tryRestful = ({ lensPath, data, json, next = false }) => {
       next: true,
     });
   } else {
-    return { data: maybeNextItem };
+    return { data: maybeNextItem || {} };
   }
 };
 
-const tryProps = ({ data }) => {
+const tryProps = ({ data, ...props }) => {
   return { data };
 };
 
