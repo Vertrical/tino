@@ -33,7 +33,7 @@ const prepareContext = ({ req, state }) => {
       responseDefinition.params = { ...matchedPath.params };
       const _method = req.method.toLowerCase();
       const _hasMethod = pathArgs[_method] || pathArgs["any"];
-      if (U.hasPath(["path"], matchedPath) && _hasMethod) {
+      if (U.has("path", matchedPath) && _hasMethod) {
         const endpointArgs = pathArgs[_method] || pathArgs["any"];
         Object.assign(responseDefinition, endpointArgs);
         break;

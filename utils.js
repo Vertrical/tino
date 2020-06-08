@@ -35,7 +35,7 @@ export const path = _curry((p, o) =>
   p.reduce((xs, x) => (xs && xs[x] ? xs[x] : null), o)
 );
 
-export const hasPath = (p, o) => path(p, o) == null;
+export const has = (prop, obj) => Object.prototype.hasOwnProperty.call(obj, prop);
 
 export const isEmpty = (obj) => {
   for (var key in obj) {
@@ -77,4 +77,4 @@ export const dissoc = (prop, o) => {
   }
   delete result[prop];
   return result;
-}
+};
