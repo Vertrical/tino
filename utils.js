@@ -35,7 +35,8 @@ export const path = _curry((p, o) =>
   p.reduce((xs, x) => (xs && xs[x] ? xs[x] : null), o)
 );
 
-export const has = (prop, obj) => Object.prototype.hasOwnProperty.call(obj, prop);
+export const has = (prop, obj) =>
+  Object.prototype.hasOwnProperty.call(obj, prop);
 
 export const isEmpty = (obj) => {
   for (var key in obj) {
@@ -77,4 +78,18 @@ export const dissoc = (prop, o) => {
   }
   delete result[prop];
   return result;
+};
+
+export const containsAll = (inputObj, obj) => {
+  var idx = 0;
+  const names = Object.keys(inputObj);
+  var len = names.length;
+  while (idx < len) {
+    var name = names[idx];
+    if (!obj[name] || obj[name] !== inputObj[name]) {
+      return false;
+    }
+    idx += 1;
+  }
+  return true;
 };

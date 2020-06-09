@@ -27,14 +27,20 @@ export const checkJsonDb = async (dbPathname = "./db.json") => {
   }
 };
 
-const tryDirectLens = ({ lensPath, json }) => {
+const tryDirectLens = ({ lensPath, json, ...props }) => {
   const data = U.path(lensPath, json);
-  return { lensPath, data, json };
+  return { lensPath, data, json, ...props };
 };
 
-export const tryRestful = ({ lensPath, data, json, next = false }) => {
+export const tryRestful = ({
+  lensPath,
+  data,
+  json,
+  next = false,
+  ...props
+}) => {
   if (!U.isNil(data) && !next) {
-    return { data };
+    return { data, ...props };
   }
   const [singlePathItem, ...restPathItems] = lensPath;
   const dataPayload = data || json;
@@ -50,17 +56,24 @@ export const tryRestful = ({ lensPath, data, json, next = false }) => {
       data: maybeNextItem,
       json,
       next: true,
+      ...props,
     });
   } else {
-    return { data: maybeNextItem || {} };
+    return { data: maybeNextItem || {}, ...props };
   }
 };
 
 const tryProps = ({ data, ...props }) => {
+  if (U.isArray(data) && U.has("query", props)) {
+    const res = data.filter(
+      (item) => U.isObject(item) && U.containsAll(props.query, item)
+    );
+    return { data: res };
+  }
   return { data };
 };
 
-const serveResponse = ({ data }) => {
+const buildResponse = ({ data }) => {
   if (U.isArray(data)) {
     return { response: [...data] };
   } else if (U.isObject(data)) {
@@ -70,24 +83,24 @@ const serveResponse = ({ data }) => {
 };
 
 const handleJson = U.compose(
-  serveResponse,
+  buildResponse,
   tryProps,
   tryRestful,
   tryDirectLens
 );
 
-const handler = (props) => {
+const buildBody = (props) => {
   const { url, method } = props.ctx.req;
-  const { pathPattern } = props.ctx;
+  const { pathPattern, query } = props.ctx;
   if (U.isObject(props.json)) {
-    const path = url.replace(pathPattern, "");
+    const path = url.split("?")[0].replace(pathPattern, "");
     if (U.isEmpty(path)) {
       return {
-        body: serveResponse({ data: props.json }),
+        body: buildResponse({ data: props.json }),
       };
     } else {
       const lensPath = path.split("/").filter((x) => x);
-      const payload = handleJson({ lensPath, json: props.json });
+      const payload = handleJson({ lensPath, json: props.json, query });
       return { body: payload };
     }
   }
@@ -96,7 +109,7 @@ const handler = (props) => {
   };
 };
 
-const processJsonOrContent = (file) => U.asyncCompose(handler)(file);
+const processJsonOrContent = (file) => U.asyncCompose(buildBody)(file);
 
 const jsondb = (
   process = processJsonOrContent,

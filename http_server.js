@@ -75,7 +75,7 @@ const handleUse = async ({ ctx, ...responseDefinition }) => {
       if (_useHandler) {
         const handlerCallResult = await execMaybeHandler({
           maybeFunction: _useHandler,
-          ctx: { ...ctx, pathPattern },
+          ctx: { ...ctx, pathPattern, ...responseDefinition },
         });
         Object.assign(responseDefinition, handlerCallResult);
         break;
