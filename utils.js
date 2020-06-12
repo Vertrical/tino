@@ -1,14 +1,5 @@
-const _curry = (func) => {
-  return function curried(...args) {
-    if (args.length >= func.length) {
-      return func.apply(this, args);
-    } else {
-      return function (...args2) {
-        return curried.apply(this, args.concat(args2));
-      };
-    }
-  };
-};
+const _curry = (fn) => (...args) =>
+  args.length >= fn.length ? fn(...args) : _curry(fn.bind(undefined, ...args));
 
 export const asyncCompose = (...functions) => (input) =>
   functions.reduceRight(
@@ -22,8 +13,7 @@ export const compose = (...fns) => (data) =>
 export const isObject = (obj) =>
   Object.prototype.toString.call(obj) === "[object Object]";
 
-export const isArray = (obj) =>
-  Object.prototype.toString.call(obj) === "[object Array]";
+export const isArray = (obj) => Array.isArray(obj);
 
 export const isFunction = (obj) =>
   Object.prototype.toString.call(obj) === "[object Function]";
@@ -93,3 +83,38 @@ export const containsAll = (inputObj, obj) => {
   }
   return true;
 };
+
+// lenses
+const prop = _curry((k, obj) => (obj ? obj[k] : undefined));
+
+const assoc = _curry((k, v, obj) => ({ ...obj, [k]: v }));
+
+const lens = _curry((getter, setter) => (F) => (target) =>
+  F(getter(target)).map((focus) => setter(focus, target))
+);
+
+const lensProp = (k) => lens(prop(k), assoc(k));
+
+export const lensPath = (path) => compose(...path.map(lensProp));
+
+const always = (a) => () => a;
+
+const setFunctor = (x) =>
+  Object.freeze({
+    value: x,
+    map: (f) => setFunctor(f(x)),
+  });
+
+const getFunctor = (x) =>
+  Object.freeze({
+    value: x,
+    map: (f) => getFunctor(x),
+  });
+
+const over = _curry((lens, f, obj) => lens((y) => setFunctor(f(y)))(obj).value);
+
+export const view = _curry((lens, obj) => lens(getFunctor)(obj).value);
+export const set = _curry((lens, val, obj) => over(lens, always(val), obj));
+
+export const setLens = ({ path, content, obj }) =>
+  set(lensPath(path))(content)(obj);

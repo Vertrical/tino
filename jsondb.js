@@ -28,7 +28,7 @@ export const checkJsonDb = async (dbPathname = "./db.json") => {
 };
 
 const tryDirectLens = ({ lensPath, json, ...props }) => {
-  const data = U.path(lensPath, json);
+  const data = props.method === "GET" ? U.path(lensPath, json) : null;
   return { lensPath, data, json, ...props };
 };
 
@@ -39,8 +39,8 @@ export const tryRestful = ({
   next = false,
   ...props
 }) => {
-  if (!U.isNil(data) && !next) {
-    return { data, ...props };
+  if ((!U.isNil(data) && !next) || props.method !== "GET") {
+    return { data, json, lensPath, ...props };
   }
   const [singlePathItem, ...restPathItems] = lensPath;
   const dataPayload = data || json;
@@ -59,18 +59,76 @@ export const tryRestful = ({
       ...props,
     });
   } else {
-    return { data: maybeNextItem || {}, ...props };
+    return { data: maybeNextItem || {}, json, lensPath, ...props };
   }
 };
 
 const tryProps = ({ data, ...props }) => {
-  if (U.isArray(data) && U.has("query", props)) {
+  const { method, lensPath, json } = props;
+  if (method !== "GET") {
+    return { data, ...props };
+  }
+  if (U.isArray(data) && !U.isEmpty(props.query)) {
     const res = data.filter(
       (item) => U.isObject(item) && U.containsAll(props.query, item)
     );
-    return { data: res };
+    return { data: res, method, lensPath, json };
   }
-  return { data };
+  return { data, method, lensPath, json };
+};
+
+export const tryPost = ({ ...props }) => {
+  if (props.method !== "POST") {
+    return props;
+  }
+  const { lensPath, json } = props;
+  return { data: "post" };
+};
+
+const tryDelete = ({ ...props }) => {
+  if (props.method !== "DELETE") {
+    return props;
+  }
+  const { lensPath, json } = props;
+  const parentPath = [...lensPath];
+  const lastIdx = parentPath.pop();
+  const parentView = U.view(U.lensPath(parentPath))(json);
+  if (U.isArray(parentView)) {
+    if (lastIdx !== "" && !isNaN(lastIdx)) {
+      parentView.splice(lastIdx, 1);
+      return {
+        data: U.setLens({ path: parentPath, content: parentView, obj: json }),
+      };
+    }
+  } else {
+    const view = U.view(U.lensPath(lensPath))(json);
+    if (U.isArray(view) && !U.isEmpty(props.query)) {
+      const withQueryApplied = view.filter(
+        (item) => U.isObject(item) && !U.containsAll(props.query, item)
+      );
+      return {
+        data: U.setLens({
+          path: lensPath,
+          content: withQueryApplied,
+          obj: json,
+        }),
+      };
+    }
+    return {
+      data: U.setLens({
+        path: lensPath,
+        content: withQueryApplied,
+        obj: json,
+      }),
+    };
+  }
+};
+
+export const tryAllMethods = U.compose(tryPost, tryDelete);
+
+const applyMethods = ({ data, ...props }) => {
+  const { method, lensPath, json, query } = props;
+  return tryAllMethods({ data, method, lensPath, json, query });
 };
 
 const buildResponse = ({ data }) => {
@@ -84,6 +142,7 @@ const buildResponse = ({ data }) => {
 
 const handleJson = U.compose(
   buildResponse,
+  applyMethods,
   tryProps,
   tryRestful,
   tryDirectLens
@@ -100,7 +159,7 @@ const buildBody = (props) => {
       };
     } else {
       const lensPath = path.split("/").filter((x) => x);
-      const payload = handleJson({ lensPath, json: props.json, query });
+      const payload = handleJson({ lensPath, json: props.json, query, method });
       return { body: payload };
     }
   }
