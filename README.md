@@ -9,14 +9,14 @@
 ```js
 import json_server from "./json_server.js";
 const app = json_server.create();
-app.get(() => ({ path: "/ping", body: "pong" }));
+app.get(() => ({ path: "/ping", resp: "pong" }));
 json_server.listen({ app, port: 8000 });
 ```
 
 1. Now run the server: `deno --allow-net repl.js`
 2. Send a request: `http :8000/ping` (using [HTTPie](https://httpie.org/) or curl, etc.)
 
-(`body` can be anything. If it's a function, it will be called no matter if it's async or not.)
+(`resp` can be anything. If it's a function, it will be called no matter if it's async or not.)
 
 ### Purpose
 
@@ -54,8 +54,8 @@ app.any(() => ({ path: "/api", status: 404 }));
 ```
 Remember that you need to create file `db.json` yourself. If not, the response will be empty object `{}` and status 404 by default.
 
-### When to use `body` and `use`?
+### When to use `resp` and `use`?
 
-Difference between `body` and `use` is that `use` must return `{ body, status? }` (status is optional). Body again can be anything - if it's a function, it will be executed no matter if it's async or not. 
+Difference between `resp` and `use` is that `use` must return `{ resp, status? }` (status is optional). Response again can be anything - if it's a function, it will be executed no matter if it's async or not. 
 
 This way you can write your own responders easily using `use`. `jsondb` is just a responder which reads and maintains json.db file.

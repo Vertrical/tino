@@ -7,21 +7,21 @@ const app = json_server.create();
 // app.any(() => ({ path: "/api", status: 404 }));
 app.any(() => ({
   path: "/hello/:from",
-  body: ({ params, query }) => `From ${params.from} to ${query.who}!`,
+  resp: ({ params, query }) => `From ${params.from} to ${query.who}!`,
 }));
 app.any(() => ({ path: "/myapi", use: jsondb() }));
-app.get(() => ({ path: "/func", body: () => "return" }));
-app.get(() => ({ path: "/async", body: async () => ({ dev: "async" }) }));
-app.get(() => ({ path: "/obj", body: () => ({ dev: 1 }) }));
-app.get(() => ({ path: "/obj2", body: { dev: 1 } }));
-app.get(() => ({ path: "/other", body: false }));
+app.get(() => ({ path: "/func", resp: () => "return" }));
+app.get(() => ({ path: "/async", resp: async () => ({ dev: "async" }) }));
+app.get(() => ({ path: "/obj", resp: () => ({ dev: 1 }) }));
+app.get(() => ({ path: "/obj2", resp: { dev: 1 } }));
+app.get(() => ({ path: "/other", resp: false }));
 app.post(() => ({
   path: "/post/:id?",
-  body: (props) => props,
+  resp: (props) => props,
   status: 500,
   something: "else",
 }));
-app.not_found(() => ({ body: () => "Oops" }));
+app.not_found(() => ({ resp: () => "Oops" }));
 
 console.log(app.getState());
 

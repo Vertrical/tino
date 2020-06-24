@@ -86,50 +86,50 @@ const handleUse = async ({ ctx, ...responseDefinition }) => {
 };
 
 const handleNotFound = ({ ctx, ...responseDefinition }) => {
-  if (ctx.state.has(404) && !responseDefinition.body) {
+  if (ctx.state.has(404) && !responseDefinition.resp) {
     return {
       ...responseDefinition,
       status: 404,
-      body: ctx.state.get(404).body,
+      resp: ctx.state.get(404).resp,
     };
   }
   return { ctx, ...responseDefinition };
 };
 
-export const resolveBody = async ({
-  body: bodyOrHandler,
+export const resolveResponse = async ({
+  resp: responseOrHandler,
   params,
   status,
   ctx,
   ...props
 }) => {
-  let body;
-  if (U.isAsyncFunction(bodyOrHandler)) {
-    body = await bodyOrHandler({ params, ctx, ...props });
+  let resp;
+  if (U.isAsyncFunction(responseOrHandler)) {
+    resp = await responseOrHandler({ params, ctx, ...props });
   } else {
-    body = U.isFunction(bodyOrHandler)
-      ? bodyOrHandler({ params, ctx, ...props })
-      : bodyOrHandler;
+    resp = U.isFunction(responseOrHandler)
+      ? responseOrHandler({ params, ctx, ...props })
+      : responseOrHandler;
   }
   if (status) {
-    return { body, status };
+    return { resp, status };
   }
-  if (!body) {
-    return { body, status: 404 };
+  if (!resp) {
+    return { resp, status: 404 };
   }
-  return { body };
+  return { resp };
 };
 
-export const createResponder = async ({ body, status, ...props }) => {
-  const responderObject = { body };
-  if (U.isAsyncFunction(body)) {
-    const _body = await body();
-    responderObject.body = _body;
-  } else if (U.isObject(body) || U.isArray(body)) {
-    responderObject.body = { ...body };
-  } else if (U.isFunction(body)) {
-    const _body = body();
-    responderObject.body = _body;
+export const createResponder = async ({ resp, status, ...props }) => {
+  const responderObject = { body: resp };
+  if (U.isAsyncFunction(resp)) {
+    const _resp = await resp();
+    responderObject.body = _resp;
+  } else if (U.isObject(resp) || U.isArray(resp)) {
+    responderObject.body = { ...resp };
+  } else if (U.isFunction(resp)) {
+    const _resp = resp();
+    responderObject.body = _resp;
   }
   if (U.isObject(responderObject.body)) {
     responderObject.body = JSON.stringify(responderObject.body);
@@ -145,7 +145,7 @@ export const createResponder = async ({ body, status, ...props }) => {
 
 export const processRequest = U.asyncCompose(
   createResponder,
-  resolveBody,
+  resolveResponse,
   handleNotFound,
   handleUse,
   prepareContext
