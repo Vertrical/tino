@@ -170,14 +170,14 @@ const handleJson = U.compose(
   tryDirectLens
 );
 
-const buildBody = (props) => {
+const buildResponseBody = (props) => {
   const { url, method } = props.ctx.req;
   const { pathPattern, query } = props.ctx;
   if (U.isObject(props.json)) {
     const path = url.split("?")[0].replace(pathPattern, "");
     if (U.isEmpty(path) && method !== "POST") {
       return {
-        body: buildResponse({ data: props.json }),
+        resp: buildResponse({ data: props.json }),
       };
     } else {
       const lensPath = path.split("/").filter((x) => x);
@@ -186,11 +186,11 @@ const buildBody = (props) => {
     }
   }
   return {
-    body: props.fileContent,
+    resp: props.fileContent,
   };
 };
 
-const processJsonOrContent = (file) => U.asyncCompose(buildBody)(file);
+const processJsonOrContent = (file) => U.asyncCompose(buildResponseBody)(file);
 
 const jsondb = (
   process = processJsonOrContent,
@@ -203,7 +203,7 @@ const jsondb = (
       fileContent: file.fileContent,
       ctx,
     });
-    if (file.json && U.isEmpty(U.path(["body", "response"], res))) {
+    if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
       return U.setTo(res, { status: 404 });
     }
     return { ...res };

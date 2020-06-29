@@ -10,18 +10,18 @@ state.set("/api", { any: { use: jsondb() } });
 
 const getState = () => state;
 
-const setState = (path, { method, body, ...props }) => {
+const setState = (path, { method, resp, ...props }) => {
   if (!method && props.status) {
-    state.set(props.status, { body, ...U.dissoc("status", props) });
+    state.set(props.status, { resp, ...U.dissoc("status", props) });
   } else {
-    const pathDefinition = { [method]: { body, ...props } };
+    const pathDefinition = { [method]: { resp, ...props } };
     state.set(path, pathDefinition);
   }
   return state;
 };
 
-const dispatchHandler = (path, { method, body, ...props }) => {
-  setState(path, { method, body, ...props });
+const dispatchHandler = (path, { method, resp, ...props }) => {
+  setState(path, { method, resp, ...props });
 };
 
 const resolveConfig = (configurator) => {
@@ -34,12 +34,12 @@ const useDispatch = ({ dispatch = dispatchHandler, ...configs }) => ({
   ...configs,
 });
 
-const updateState = (method) => ({ path, body, dispatch, ...props }) => {
-  dispatch(path, { method, body, ...props });
+const updateState = (method) => ({ path, resp, dispatch, ...props }) => {
+  dispatch(path, { method, resp, ...props });
 };
 
-const updateNotFoundState = () => ({ path, body, dispatch }) => {
-  dispatch(path, { status: 404, body });
+const updateNotFoundState = () => ({ path, resp, dispatch }) => {
+  dispatch(path, { status: 404, resp });
 };
 
 const methodHandler = (method) =>
