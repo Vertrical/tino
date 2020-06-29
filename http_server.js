@@ -143,11 +143,25 @@ export const createResponder = async ({ resp, status, ...props }) => {
   return responderObject;
 };
 
+export const resolveRequestBody = async ({ ...props }) => {
+  const { ctx } = props;
+  const parsedBody = new TextDecoder("utf-8").decode(
+    await Deno.readAll(ctx.req.body)
+  );
+  const body = U.tryCatch(
+    () => JSON.parse(parsedBody),
+    () => parsedBody
+  );
+
+  return { reqBody: body, ...props };
+};
+
 export const processRequest = U.asyncCompose(
   createResponder,
   resolveResponse,
   handleNotFound,
   handleUse,
+  resolveRequestBody,
   prepareContext
 );
 
