@@ -81,8 +81,30 @@ export const tryPost = ({ ...props }) => {
   if (props.method !== "POST") {
     return props;
   }
-  const { lensPath, json } = props;
-  return { data: "post" };
+  const { lensPath, json, body } = props;
+  const parentPath = [...lensPath];
+  const parentView = U.view(U.lensPath(parentPath))(json);
+  if (parentPath.length === 0) {
+    return U.isObject(body)
+      ? { data: { ...parentView, ...body } }
+      : { status: 400 };
+  } else {
+    if (U.isObject(parentView) && U.isObject(body)) {
+      return {
+        data: U.setLens({ path: parentPath, content: { ...parentView, ...body }, body: json }),
+      };
+    } else if (U.isArray(parentView)) {
+      if (U.isArray(body)) {
+        parentView.push(...body);
+      } else {
+        parentView.push(body);
+      }
+      return {
+        data: U.setLens({ path: parentPath, content: parentView, obj: json }),
+      };
+    }
+    return { status: 400 };
+  }
 };
 
 const tryDelete = ({ ...props }) => {
@@ -127,8 +149,8 @@ const tryDelete = ({ ...props }) => {
 export const tryAllMethods = U.compose(tryPost, tryDelete);
 
 const applyMethods = ({ data, ...props }) => {
-  const { method, lensPath, json, query } = props;
-  return tryAllMethods({ data, method, lensPath, json, query });
+  const { method, lensPath, json, query, ctx } = props;
+  return tryAllMethods({ data, method, lensPath, json, query, body: ctx.reqBody });
 };
 
 const buildResponse = ({ data }) => {
@@ -153,13 +175,13 @@ const buildBody = (props) => {
   const { pathPattern, query } = props.ctx;
   if (U.isObject(props.json)) {
     const path = url.split("?")[0].replace(pathPattern, "");
-    if (U.isEmpty(path)) {
+    if (U.isEmpty(path) && method !== "POST") {
       return {
         body: buildResponse({ data: props.json }),
       };
     } else {
       const lensPath = path.split("/").filter((x) => x);
-      const payload = handleJson({ lensPath, json: props.json, query, method });
+      const payload = handleJson({ lensPath, json: props.json, query, method, ...props });
       return { body: payload };
     }
   }
