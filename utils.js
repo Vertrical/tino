@@ -10,6 +10,9 @@ export const asyncCompose = (...functions) => (input) =>
 export const compose = (...fns) => (data) =>
   fns.reduceRight((value, fn) => fn(value), data);
 
+export const isString = (obj) =>
+  Object.prototype.toString.call(obj) === "[object String]";
+
 export const isObject = (obj) =>
   Object.prototype.toString.call(obj) === "[object Object]";
 
@@ -29,12 +32,17 @@ export const has = (prop, obj) =>
   Object.prototype.hasOwnProperty.call(obj, prop);
 
 export const isEmpty = (obj) => {
-  for (var key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      return false;
-    }
+  if (isNil(obj)) {
+    return false;
+  } else if (isArray(obj)) {
+    return obj.length === 0;
+  } else if (isString(obj)) {
+    return obj === '';
+  } else if (isObject(obj)) {
+    return Object.keys(obj).length === 0 && obj.constructor === Object;
   }
-  return true;
+
+  return false;
 };
 
 export const isNil = (obj) => {
