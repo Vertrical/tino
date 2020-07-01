@@ -86,25 +86,33 @@ export const tryPost = ({ ...props }) => {
   const parentView = U.view(U.lensPath(parentPath))(json);
   if (parentPath.length === 0) {
     return U.isObject(body)
-      ? { data: U.setLens({ path: parentPath, content: { ...parentView, ...body }, body: json }) }
+      ? {
+          data: U.setLens({
+            path: parentPath,
+            content: { ...parentView, ...body },
+            body: json,
+          }),
+        }
       : { status: 400 };
-  } else {
-    if (U.isObject(parentView) && U.isObject(body)) {
-      return {
-        data: U.setLens({ path: parentPath, content: { ...parentView, ...body }, body: json }),
-      };
-    } else if (U.isArray(parentView)) {
-      if (U.isArray(body)) {
-        parentView.push(...body);
-      } else {
-        parentView.push(body);
-      }
-      return {
-        data: U.setLens({ path: parentPath, content: parentView, obj: json }),
-      };
-    }
-    return { status: 400 };
   }
+  if (U.isObject(parentView) && U.isObject(body)) {
+    return {
+      data: U.setLens({
+        path: parentPath,
+        content: { ...parentView, ...body },
+        body: json,
+      }),
+    };
+  } else if (U.isArray(parentView)) {
+    return {
+      data: U.setLens({
+        path: parentPath,
+        content: parentView.concat(U.isArray(body) ? [...body] : body),
+        obj: json,
+      }),
+    };
+  }
+  return { status: 400 };
 };
 
 const tryDelete = ({ ...props }) => {
