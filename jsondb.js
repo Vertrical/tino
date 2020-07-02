@@ -84,7 +84,8 @@ export const tryPost = ({ ...props }) => {
   const { lensPath, json, body } = props;
   const parentPath = [...lensPath];
   const parentView = U.view(U.lensPath(parentPath))(json);
-  if (parentPath.length === 0) {
+  const isRootPath = parentPath.length === 0;
+  if (isRootPath) {
     return U.isObject(body)
       ? {
           data: U.setLens({
