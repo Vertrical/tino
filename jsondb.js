@@ -81,8 +81,39 @@ export const tryPost = ({ ...props }) => {
   if (props.method !== "POST") {
     return props;
   }
-  const { lensPath, json } = props;
-  return { data: "post" };
+  const { lensPath, json, body } = props;
+  const parentPath = [...lensPath];
+  const parentView = U.view(U.lensPath(parentPath))(json);
+  const isRootPath = parentPath.length === 0;
+  if (isRootPath) {
+    return U.isObject(body)
+      ? {
+          data: U.setLens({
+            path: parentPath,
+            content: { ...parentView, ...body },
+            obj: json,
+          }),
+        }
+      : { status: 400 };
+  }
+  if (U.isObject(parentView) && U.isObject(body)) {
+    return {
+      data: U.setLens({
+        path: parentPath,
+        content: { ...parentView, ...body },
+        obj: json,
+      }),
+    };
+  } else if (U.isArray(parentView)) {
+    return {
+      data: U.setLens({
+        path: parentPath,
+        content: parentView.concat(U.isArray(body) ? [...body] : body),
+        obj: json,
+      }),
+    };
+  }
+  return { status: 400 };
 };
 
 const tryDelete = ({ ...props }) => {
@@ -127,8 +158,8 @@ const tryDelete = ({ ...props }) => {
 export const tryAllMethods = U.compose(tryPost, tryDelete);
 
 const applyMethods = ({ data, ...props }) => {
-  const { method, lensPath, json, query } = props;
-  return tryAllMethods({ data, method, lensPath, json, query });
+  const { method, lensPath, json, query, ctx } = props;
+  return tryAllMethods({ data, method, lensPath, json, query, body: ctx.reqBody });
 };
 
 const buildResponse = ({ data }) => {
@@ -153,13 +184,13 @@ const buildResponseBody = (props) => {
   const { pathPattern, query } = props.ctx;
   if (U.isObject(props.json)) {
     const path = url.split("?")[0].replace(pathPattern, "");
-    if (U.isEmpty(path)) {
+    if (U.isEmpty(path) && method !== "POST") {
       return {
         resp: buildResponse({ data: props.json }),
       };
     } else {
       const lensPath = path.split("/").filter((x) => x);
-      const payload = handleJson({ lensPath, json: props.json, query, method });
+      const payload = handleJson({ lensPath, json: props.json, query, method, ...props });
       return { resp: payload };
     }
   }
