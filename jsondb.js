@@ -91,7 +91,7 @@ export const tryPost = ({ ...props }) => {
           data: U.setLens({
             path: parentPath,
             content: { ...parentView, ...body },
-            body: json,
+            obj: json,
           }),
         }
       : { status: 400 };
@@ -101,7 +101,7 @@ export const tryPost = ({ ...props }) => {
       data: U.setLens({
         path: parentPath,
         content: { ...parentView, ...body },
-        body: json,
+        obj: json,
       }),
     };
   } else if (U.isArray(parentView)) {
@@ -191,7 +191,7 @@ const buildResponseBody = (props) => {
     } else {
       const lensPath = path.split("/").filter((x) => x);
       const payload = handleJson({ lensPath, json: props.json, query, method, ...props });
-      return { body: payload };
+      return { resp: payload };
     }
   }
   return {
