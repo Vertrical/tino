@@ -116,6 +116,60 @@ export const tryPost = ({ ...props }) => {
   return { status: 400 };
 };
 
+export const tryPut = ({ ...props }) => {
+  if (props.method !== "PUT") {
+    return props;
+  }
+  const { lensPath, json, body } = props;
+  const path = [...lensPath];
+  const view = U.view(U.lensPath(path))(json);
+  const parentPath = path.slice(0, -1);
+  const parentView = U.view(U.lensPath(parentPath))(json);
+  if (!view && parentView) {
+    return U.isArray(parentView)
+      ? {
+          data: U.setLens({
+            path: parentPath,
+            content: parentView.concat(U.isArray(body) ? [...body] : body),
+            obj: json,
+          }),
+        }
+      : { status: 400 };
+  }
+  if (view) {
+    return U.ifElse(
+      () => U.isObject(view),
+      () =>
+        U.isObject(body)
+          ? {
+              data: U.setLens({
+                path,
+                content: { ...view, ...body },
+                obj: json,
+              }),
+            }
+          : { status: 400 },
+      U.ifElse(
+        () => U.isArray(view),
+        () =>
+          !U.isObject(body)
+            ? {
+                data: U.setLens({
+                  path,
+                  content: view.concat(U.isArray(body) ? [...body] : body),
+                  obj: json,
+                }),
+              }
+            : { status: 400 },
+        () => ({
+          status: 400,
+        })
+      )
+    )();
+  }
+  return { status: 400 };
+};
+
 const tryDelete = ({ ...props }) => {
   if (props.method !== "DELETE") {
     return props;
@@ -155,7 +209,7 @@ const tryDelete = ({ ...props }) => {
   }
 };
 
-export const tryAllMethods = U.compose(tryPost, tryDelete);
+export const tryAllMethods = U.compose(tryPut, tryPost, tryDelete);
 
 const applyMethods = ({ data, ...props }) => {
   const { method, lensPath, json, query, ctx } = props;

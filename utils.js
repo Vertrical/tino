@@ -52,6 +52,12 @@ export const isNil = (obj) => {
   return false;
 };
 
+export const ifElse = _curry((condition, onTrue, onFalse) => (...args) =>
+  condition.apply(this, ...args)
+    ? onTrue.apply(this, ...args)
+    : onFalse.apply(this, ...args)
+);
+
 export const setTo = (obj, chunk) => Object.assign({}, obj, chunk);
 
 export const tryCatch = (fn1, fn2) => {
