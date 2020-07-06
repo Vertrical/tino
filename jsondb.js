@@ -116,6 +116,21 @@ export const tryPost = ({ ...props }) => {
   return { status: 400 };
 };
 
+const tryPatch = ({ ...props }) => {
+  if (props.method !== "PATCH") {
+    return props;
+  }
+  const { lensPath, json, body } = props;
+  const path = [...lensPath];
+  const view = U.view(U.lensPath(path))(json);
+  if (U.isObject(view)) {
+    return U.isObject(body)
+      ? { data: U.setLens({ path, content: { ...view, ...body }, obj: json }) }
+      : { status: 400 };
+  }
+  return { status: 400 };
+};
+
 const tryDelete = ({ ...props }) => {
   if (props.method !== "DELETE") {
     return props;
@@ -155,7 +170,7 @@ const tryDelete = ({ ...props }) => {
   }
 };
 
-export const tryAllMethods = U.compose(tryPost, tryDelete);
+export const tryAllMethods = U.compose(tryPatch, tryPost, tryDelete);
 
 const applyMethods = ({ data, ...props }) => {
   const { method, lensPath, json, query, ctx } = props;
