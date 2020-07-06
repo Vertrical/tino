@@ -202,6 +202,7 @@ const buildResponseBody = (props) => {
 const processJsonOrContent = (file) => U.asyncCompose(buildResponseBody)(file);
 
 const jsondb = (
+  dryRun = false,
   process = processJsonOrContent,
   checkFile = checkJsonDb
 ) => async (ctx) => {
