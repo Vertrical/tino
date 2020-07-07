@@ -156,6 +156,11 @@ export const resolveRequestBody = async ({ ...props }) => {
   return { reqBody: body, ...props };
 };
 
+export const HttpStatus = {
+  CLIENT_ERROR: 400,
+  NOT_FOUND: 404,
+};
+
 export const processRequest = U.asyncCompose(
   createResponder,
   resolveResponse,

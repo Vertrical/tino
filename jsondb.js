@@ -1,5 +1,7 @@
 import { readJson, readFileStr, fileExists } from "./deps.js";
 import * as U from "./utils.js";
+import { getStatus } from "./json_server.js";
+import { HttpStatus } from './http_server';
 
 export const readJsonDb = async (dbPathname = "./db.json") => {
   const content = await readFileStr(dbPathname);
@@ -94,7 +96,7 @@ export const tryPost = ({ ...props }) => {
             obj: json,
           }),
         }
-      : { status: 400 };
+      : getStatus(HttpStatus.CLIENT_ERROR);
   }
   if (U.isObject(parentView) && U.isObject(body)) {
     return {
@@ -113,7 +115,7 @@ export const tryPost = ({ ...props }) => {
       }),
     };
   }
-  return { status: 400 };
+  return getStatus(HttpStatus.CLIENT_ERROR);
 };
 
 export const tryPut = ({ ...props }) => {
@@ -135,7 +137,7 @@ export const tryPut = ({ ...props }) => {
             obj: json,
           }),
         }
-      : { status: 400 };
+      : getStatus(HttpStatus.CLIENT_ERROR);
   }
   if (view) {
     return U.ifElse(
@@ -149,7 +151,7 @@ export const tryPut = ({ ...props }) => {
                 obj: json,
               }),
             }
-          : { status: 400 },
+          : getStatus(HttpStatus.CLIENT_ERROR),
       U.ifElse(
         () => U.isArray(view),
         () =>
@@ -161,14 +163,12 @@ export const tryPut = ({ ...props }) => {
                   obj: json,
                 }),
               }
-            : { status: 400 },
-        () => ({
-          status: 400,
-        })
+            : getStatus(HttpStatus.CLIENT_ERROR),
+        () => getStatus(HttpStatus.CLIENT_ERROR)
       )
     )();
   }
-  return { status: 400 };
+  return getStatus(HttpStatus.CLIENT_ERROR);
 };
 
 const tryDelete = ({ ...props }) => {
@@ -268,11 +268,11 @@ const jsondb = (
       ctx,
     });
     if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
-      return U.setTo(res, { status: 404 });
+      return U.setTo(res, getStatus(HttpStatus.NOT_FOUND));
     }
     return { ...res };
   }
-  return { status: 404 };
+  return getStatus(HttpStatus.NOT_FOUND);
 };
 
 export default jsondb;

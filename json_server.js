@@ -70,6 +70,11 @@ const json_server = {
   listen,
 };
 
+export const getStatus = (status = 400, description = null) => ({
+  status,
+  ...(description && { description }),
+});
+
 export const compose = () => {};
 
 export const tap = () => {};
