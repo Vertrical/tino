@@ -1,7 +1,7 @@
 import { readJson, readFileStr, fileExists } from "./deps.js";
 import * as U from "./utils.js";
 import { getStatus } from "./json_server.js";
-import { HttpStatus } from './http_server';
+import { HttpStatus } from "./http_server.js";
 
 export const readJsonDb = async (dbPathname = "./db.json") => {
   const content = await readFileStr(dbPathname);
