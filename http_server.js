@@ -157,7 +157,7 @@ export const resolveRequestBody = async ({ ...props }) => {
 };
 
 export const HttpStatus = {
-  CLIENT_ERROR: 400,
+  BAD_REQUEST: 400,
   NOT_FOUND: 404,
 };
 

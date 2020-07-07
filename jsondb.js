@@ -96,7 +96,7 @@ export const tryPost = ({ ...props }) => {
             obj: json,
           }),
         }
-      : getStatus(HttpStatus.CLIENT_ERROR);
+      : getStatus(HttpStatus.BAD_REQUEST);
   }
   if (U.isObject(parentView) && U.isObject(body)) {
     return {
@@ -115,7 +115,7 @@ export const tryPost = ({ ...props }) => {
       }),
     };
   }
-  return getStatus(HttpStatus.CLIENT_ERROR);
+  return getStatus(HttpStatus.BAD_REQUEST);
 };
 
 export const tryPut = ({ ...props }) => {
@@ -137,7 +137,7 @@ export const tryPut = ({ ...props }) => {
             obj: json,
           }),
         }
-      : getStatus(HttpStatus.CLIENT_ERROR);
+      : getStatus(HttpStatus.BAD_REQUEST);
   }
   if (view) {
     return U.ifElse(
@@ -151,7 +151,7 @@ export const tryPut = ({ ...props }) => {
                 obj: json,
               }),
             }
-          : getStatus(HttpStatus.CLIENT_ERROR),
+          : getStatus(HttpStatus.BAD_REQUEST),
       U.ifElse(
         () => U.isArray(view),
         () =>
@@ -163,12 +163,12 @@ export const tryPut = ({ ...props }) => {
                   obj: json,
                 }),
               }
-            : getStatus(HttpStatus.CLIENT_ERROR),
-        () => getStatus(HttpStatus.CLIENT_ERROR)
+            : getStatus(HttpStatus.BAD_REQUEST),
+        () => getStatus(HttpStatus.BAD_REQUEST)
       )
     )();
   }
-  return getStatus(HttpStatus.CLIENT_ERROR);
+  return getStatus(HttpStatus.BAD_REQUEST);
 };
 
 const tryDelete = ({ ...props }) => {
