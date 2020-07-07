@@ -125,7 +125,8 @@ export const tryPut = ({ ...props }) => {
   const view = U.view(U.lensPath(path))(json);
   const parentPath = path.slice(0, -1);
   const parentView = U.view(U.lensPath(parentPath))(json);
-  if (!view && parentView) {
+  const viewHasParent = !view && parentView;
+  if (viewHasParent) {
     return U.isArray(parentView)
       ? {
           data: U.setLens({
