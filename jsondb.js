@@ -214,7 +214,7 @@ export const tryAllMethods = U.compose(tryPut, tryPost, tryDelete);
 
 const applyMethods = ({ data, ...props }) => {
   const { method, lensPath, json, query, ctx } = props;
-  return tryAllMethods({ data, method, lensPath, json, query, body: ctx.reqBody });
+  return tryAllMethods({ data, method, lensPath, json, query, body: ctx?.reqBody });
 };
 
 const buildResponse = ({ data }) => {
@@ -230,8 +230,8 @@ const handleJson = U.compose(
   buildResponse,
   applyMethods,
   tryProps,
+  tryDirectLens,
   tryRestful,
-  tryDirectLens
 );
 
 const buildResponseBody = (props) => {
