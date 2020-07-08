@@ -124,49 +124,43 @@ export const tryPut = ({ ...props }) => {
   }
   const { lensPath, json, body } = props;
   const path = [...lensPath];
-  const view = U.view(U.lensPath(path))(json);
   const parentPath = path.slice(0, -1);
+  const lastIndex = path.slice(-1)[0];
+  const view = U.view(U.lensPath(path))(json);
   const parentView = U.view(U.lensPath(parentPath))(json);
-  const viewHasParent = !view && parentView;
-  if (viewHasParent) {
-    return U.isArray(parentView)
+  const isArrayContainingObjects =
+    U.isArray(parentView) && U.isObject(parentView[0]);
+
+  if (isArrayContainingObjects && U.isObject(body)) {
+    const itemToUpdateIndex = parentView.findIndex(
+      (item) => item.id == lastIndex
+    );
+    return itemToUpdateIndex > -1
       ? {
           data: U.setLens({
             path: parentPath,
-            content: parentView.concat(U.isArray(body) ? [...body] : body),
+            content: parentView.map((item, index) =>
+              index == itemToUpdateIndex
+                ? { ...parentView[itemToUpdateIndex], ...body }
+                : item
+            ),
             obj: json,
           }),
         }
+      : {
+          data: U.setLens({
+            path: parentPath,
+            content: parentView.concat({
+              ...(body.id == null && { id: Number(lastIndex) }),
+              ...body,
+            }),
+            obj: json,
+          }),
+        };
+  } else if (U.isObject(view)) {
+    return U.isObject(body)
+      ? { data: U.setLens({ path, content: { ...view, ...body }, obj: json }) }
       : getStatus(HttpStatus.BAD_REQUEST);
-  }
-  if (view) {
-    return U.ifElse(
-      () => U.isObject(view),
-      () =>
-        U.isObject(body)
-          ? {
-              data: U.setLens({
-                path,
-                content: { ...view, ...body },
-                obj: json,
-              }),
-            }
-          : getStatus(HttpStatus.BAD_REQUEST),
-      U.ifElse(
-        () => U.isArray(view),
-        () =>
-          !U.isObject(body)
-            ? {
-                data: U.setLens({
-                  path,
-                  content: view.concat(U.isArray(body) ? [...body] : body),
-                  obj: json,
-                }),
-              }
-            : getStatus(HttpStatus.BAD_REQUEST),
-        () => getStatus(HttpStatus.BAD_REQUEST)
-      )
-    )();
   }
   return getStatus(HttpStatus.BAD_REQUEST);
 };
@@ -234,12 +228,15 @@ const handleJson = U.compose(
   tryRestful,
 );
 
+const methodShouldProcessRootPath = (method) =>
+  ["POST", "PUT"].includes(method);
+
 const buildResponseBody = (props) => {
   const { url, method } = props.ctx.req;
   const { pathPattern, query } = props.ctx;
   if (U.isObject(props.json)) {
     const path = url.split("?")[0].replace(pathPattern, "");
-    if (U.isEmpty(path) && method !== "POST") {
+    if (U.isEmpty(path) && !methodShouldProcessRootPath(method)) {
       return {
         resp: buildResponse({ data: props.json }),
       };
