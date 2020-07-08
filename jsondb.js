@@ -123,44 +123,42 @@ export const tryPut = ({ ...props }) => {
     return props;
   }
   const { lensPath, json, body } = props;
-  const path = [...lensPath];
-  const parentPath = path.slice(0, -1);
-  const lastIndex = path.slice(-1)[0];
+  const path = restfulLensPath(lensPath, json);
+  const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
+  const lastIndex = path.slice(-1);
+
+  if (U.isNil(parentPath)) {
+    return getStatus(HttpStatus.NOT_FOUND);
+  }
+
   const view = U.view(U.lensPath(path))(json);
   const parentView = U.view(U.lensPath(parentPath))(json);
   const isArrayContainingObjects =
     U.isArray(parentView) && U.isObject(parentView[0]);
 
   if (isArrayContainingObjects && U.isObject(body)) {
-    const itemToUpdateIndex = parentView.findIndex(
-      (item) => item.id == lastIndex
-    );
-    return itemToUpdateIndex > -1
+    return U.isNil(view)
       ? {
-          data: U.setLens({
-            path: parentPath,
-            content: parentView.map((item, index) =>
-              index == itemToUpdateIndex
-                ? { ...parentView[itemToUpdateIndex], ...body }
-                : item
-            ),
-            obj: json,
+        data: U.setLens({
+          path: parentPath,
+          content: parentView.concat({
+            ...(body.id == null && { id: Number(lastIndex) }),
+            ...body,
           }),
-        }
+          obj: json,
+        })
+      }
       : {
-          data: U.setLens({
-            path: parentPath,
-            content: parentView.concat({
-              ...(body.id == null && { id: Number(lastIndex) }),
-              ...body,
-            }),
-            obj: json,
-          }),
-        };
+        data: U.setLens({
+          path,
+          content: view,
+          obj: json,
+        })
+      }
   } else if (U.isObject(view)) {
     return U.isObject(body)
       ? { data: U.setLens({ path, content: { ...view, ...body }, obj: json }) }
-      : getStatus(HttpStatus.BAD_REQUEST);
+      : getStatus(HttpStatus.BAD_REQUEST)
   }
   return getStatus(HttpStatus.BAD_REQUEST);
 };
@@ -230,6 +228,33 @@ const handleJson = U.compose(
 
 const methodShouldProcessRootPath = (method) =>
   ["POST", "PUT"].includes(method);
+
+const restfulLensPath = (lensPath, json) => {
+  let finalPath = [];
+
+  for (
+      let pathItem = null,
+          pathCopy = [...lensPath],
+          current = {...json};
+      pathItem = pathCopy.shift();
+  ) {
+      if (Number.isNaN(Number(pathItem))) {
+          current = current[pathItem];
+          finalPath.push(pathItem);
+      } else {
+          const itemIndex = current.findIndex((item) => item.id == pathItem);
+  
+          if (itemIndex === -1) {
+              return null;
+          }
+  
+          current = current[itemIndex];
+          finalPath.push(`${itemIndex}`);
+      }
+  }
+  
+  return finalPath;  
+}
 
 const buildResponseBody = (props) => {
   const { url, method } = props.ctx.req;
