@@ -125,7 +125,6 @@ export const tryPut = ({ ...props }) => {
   const { lensPath, json, body } = props;
   const path = restfulLensPath(lensPath, json);
   const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
-  const lastIndex = path.slice(-1);
 
   if (U.isNil(parentPath)) {
     return getStatus(HttpStatus.NOT_FOUND);
@@ -133,32 +132,31 @@ export const tryPut = ({ ...props }) => {
 
   const view = U.view(U.lensPath(path))(json);
   const parentView = U.view(U.lensPath(parentPath))(json);
-  const isArrayContainingObjects =
-    U.isArray(parentView) && U.isObject(parentView[0]);
+  const isRootPath = U.isEmpty(path);
+  const viewIsObjectOrNonExisting = U.isObject(view) || U.isNil(view);
 
-  if (isArrayContainingObjects && U.isObject(body)) {
-    return U.isNil(view)
-      ? {
-        data: U.setLens({
-          path: parentPath,
-          content: parentView.concat({
-            ...(body.id == null && { id: Number(lastIndex) }),
-            ...body,
-          }),
-          obj: json,
-        })
-      }
-      : {
-        data: U.setLens({
-          path,
-          content: view,
-          obj: json,
-        })
-      }
-  } else if (U.isObject(view)) {
+  if (isRootPath) {
     return U.isObject(body)
       ? { data: U.setLens({ path, content: { ...view, ...body }, obj: json }) }
-      : getStatus(HttpStatus.BAD_REQUEST)
+      : getStatus(HttpStatus.BAD_REQUEST);
+  } else if (U.isObject(body) && viewIsObjectOrNonExisting) {
+    return U.isNil(view)
+      ? {
+          data: U.setLens({
+            path: parentPath,
+            content: parentView.concat({
+              ...body,
+            }),
+            obj: json,
+          }),
+        }
+      : {
+          data: U.setLens({
+            path,
+            content: body,
+            obj: json,
+          }),
+        };
   }
   return getStatus(HttpStatus.BAD_REQUEST);
 };
@@ -223,7 +221,7 @@ const handleJson = U.compose(
   applyMethods,
   tryProps,
   tryDirectLens,
-  tryRestful,
+  tryRestful
 );
 
 const methodShouldProcessRootPath = (method) =>
@@ -233,28 +231,29 @@ const restfulLensPath = (lensPath, json) => {
   let finalPath = [];
 
   for (
-      let pathItem = null,
-          pathCopy = [...lensPath],
-          current = {...json};
-      pathItem = pathCopy.shift();
+    let pathItem = null, pathCopy = [...lensPath], current = { ...json };
+    (pathItem = pathCopy.shift());
+
   ) {
-      if (Number.isNaN(Number(pathItem))) {
-          current = current[pathItem];
-          finalPath.push(pathItem);
-      } else {
-          const itemIndex = current.findIndex((item) => item.id == pathItem);
-  
-          if (itemIndex === -1) {
-              return null;
-          }
-  
-          current = current[itemIndex];
-          finalPath.push(`${itemIndex}`);
+    if (U.isObject(current)) {
+      current = current[pathItem];
+      finalPath.push(pathItem);
+    } else if (U.isArray(current)) {
+      const itemIndex = current.findIndex((item) => item.id == pathItem);
+
+      if (itemIndex === -1) {
+        return null;
       }
+
+      current = current[itemIndex];
+      finalPath.push(`${itemIndex}`);
+    } else {
+      return null;
+    }
   }
-  
-  return finalPath;  
-}
+
+  return finalPath;
+};
 
 const buildResponseBody = (props) => {
   const { url, method } = props.ctx.req;
