@@ -72,7 +72,7 @@ const tryProps = ({ data, ...props }) => {
   }
   if (U.isArray(data) && !U.isEmpty(props.query)) {
     const res = data.filter(
-      (item) => U.isObject(item) && U.containsAll(props.query, item)
+      (item) => U.isObject(item) && U.containsAll(props.query, item),
     );
     return { data: res, method, lensPath, json };
   }
@@ -90,12 +90,12 @@ export const tryPost = ({ ...props }) => {
   if (isRootPath) {
     return U.isObject(body)
       ? {
-          data: U.setLens({
-            path: parentPath,
-            content: { ...parentView, ...body },
-            obj: json,
-          }),
-        }
+        data: U.setLens({
+          path: parentPath,
+          content: { ...parentView, ...body },
+          obj: json,
+        }),
+      }
       : getStatus(HttpStatus.BAD_REQUEST);
   }
   if (U.isObject(parentView) && U.isObject(body)) {
@@ -124,39 +124,20 @@ export const tryPut = ({ ...props }) => {
   }
   const { lensPath, json, body } = props;
   const path = restfulLensPath(lensPath, json);
-  const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
+  const parentPath = path.slice(0, -1);
+  const parentObj = U.path(parentPath, json);
+  const targetObj = U.path(path, json);
 
-  if (U.isNil(parentPath)) {
-    return getStatus(HttpStatus.NOT_FOUND);
-  }
-
-  const view = U.view(U.lensPath(path))(json);
-  const parentView = U.view(U.lensPath(parentPath))(json);
-  const isRootPath = U.isEmpty(path);
-  const viewIsObjectOrNonExisting = U.isObject(view) || U.isNil(view);
-
-  if (isRootPath) {
-    return U.isObject(body)
-      ? { data: U.setLens({ path, content: { ...view, ...body }, obj: json }) }
-      : getStatus(HttpStatus.BAD_REQUEST);
-  } else if (U.isObject(body) && viewIsObjectOrNonExisting) {
-    return U.isNil(view)
-      ? {
-          data: U.setLens({
-            path: parentPath,
-            content: parentView.concat({
-              ...body,
-            }),
-            obj: json,
-          }),
-        }
-      : {
-          data: U.setLens({
-            path,
-            content: body,
-            obj: json,
-          }),
-        };
+  const canUpdateOrCreate = U.isObject(targetObj) ||
+    (U.isNil(targetObj) && U.isArray(parentObj));
+  if (canUpdateOrCreate) {
+    return {
+      data: U.setLens({
+        path,
+        content: body,
+        obj: json,
+      }),
+    };
   }
   return getStatus(HttpStatus.BAD_REQUEST);
 };
@@ -180,7 +161,7 @@ const tryDelete = ({ ...props }) => {
     const view = U.view(U.lensPath(lensPath))(json);
     if (U.isArray(view) && !U.isEmpty(props.query)) {
       const withQueryApplied = view.filter(
-        (item) => U.isObject(item) && !U.containsAll(props.query, item)
+        (item) => U.isObject(item) && !U.containsAll(props.query, item),
       );
       return {
         data: U.setLens({
@@ -204,7 +185,14 @@ export const tryAllMethods = U.compose(tryPut, tryPost, tryDelete);
 
 const applyMethods = ({ data, ...props }) => {
   const { method, lensPath, json, query, ctx } = props;
-  return tryAllMethods({ data, method, lensPath, json, query, body: ctx?.reqBody });
+  return tryAllMethods({
+    data,
+    method,
+    lensPath,
+    json,
+    query,
+    body: ctx?.reqBody,
+  });
 };
 
 const buildResponse = ({ data }) => {
@@ -221,7 +209,7 @@ const handleJson = U.compose(
   applyMethods,
   tryProps,
   tryDirectLens,
-  tryRestful
+  tryRestful,
 );
 
 const methodShouldProcessRootPath = (method) =>
@@ -233,7 +221,6 @@ const restfulLensPath = (lensPath, json) => {
   for (
     let pathItem = null, pathCopy = [...lensPath], current = { ...json };
     (pathItem = pathCopy.shift());
-
   ) {
     if (U.isObject(current)) {
       current = current[pathItem];
@@ -266,7 +253,13 @@ const buildResponseBody = (props) => {
       };
     } else {
       const lensPath = path.split("/").filter((x) => x);
-      const payload = handleJson({ lensPath, json: props.json, query, method, ...props });
+      const payload = handleJson({
+        lensPath,
+        json: props.json,
+        query,
+        method,
+        ...props,
+      });
       return { resp: payload };
     }
   }
@@ -279,21 +272,22 @@ const processJsonOrContent = (file) => U.asyncCompose(buildResponseBody)(file);
 
 const jsondb = (
   process = processJsonOrContent,
-  checkFile = checkJsonDb
-) => async (ctx) => {
-  const file = await checkFile();
-  if (file.json || file.fileContent) {
-    const res = await process({
-      json: file.json,
-      fileContent: file.fileContent,
-      ctx,
-    });
-    if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
-      return U.setTo(res, getStatus(HttpStatus.NOT_FOUND));
+  checkFile = checkJsonDb,
+) =>
+  async (ctx) => {
+    const file = await checkFile();
+    if (file.json || file.fileContent) {
+      const res = await process({
+        json: file.json,
+        fileContent: file.fileContent,
+        ctx,
+      });
+      if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
+        return U.setTo(res, getStatus(HttpStatus.NOT_FOUND));
+      }
+      return { ...res };
     }
-    return { ...res };
-  }
-  return getStatus(HttpStatus.NOT_FOUND);
-};
+    return getStatus(HttpStatus.NOT_FOUND);
+  };
 
 export default jsondb;
