@@ -86,4 +86,14 @@ export const tap = () => {};
 
 export const localdb = () => {};
 
+if (import.meta.main) {
+  const app = json_server.create();
+  const port = U.tryCatch(
+    () => Number(optionValue(CliArgument.PORT)),
+    () => 8000,
+  );
+  json_server.listen({ app, port });
+  console.log(`Server running at :${port}`);
+}
+
 export default json_server;
