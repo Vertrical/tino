@@ -128,8 +128,9 @@ export const tryPut = ({ ...props }) => {
   const parentObj = U.path(parentPath, json);
   const targetObj = U.path(path, json);
 
-  const canUpdateOrCreate = U.isObject(targetObj) ||
-    (U.isNil(targetObj) && U.isArray(parentObj));
+  const canUpdateOrCreate =
+    U.isObject(targetObj) ||
+    (U.isNil(targetObj) && (U.isArray(parentObj) || U.isObject(parentObj)));
   if (canUpdateOrCreate) {
     return {
       data: U.setLens({
