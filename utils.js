@@ -103,6 +103,28 @@ export const containsAll = (inputObj, obj) => {
   return true;
 };
 
+export const cond = (conditions) =>
+  (method) => {
+    const _cond = conditions.find(
+      (cond) => has("when", cond) && cond.when(method),
+    );
+    if (!_cond) {
+      return (props) => props;
+    }
+    return path(["use"], _cond);
+  };
+
+export const eq = (val) => (comp) => val === comp;
+
+export const when = (condFunc, applyFunc) =>
+  (props) => {
+    debugger;
+    if (condFunc(props)) {
+      return applyFunc(props);
+    }
+    return props;
+  };
+
 // lenses
 const prop = _curry((k, obj) => (obj ? obj[k] : undefined));
 
