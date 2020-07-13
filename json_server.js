@@ -1,12 +1,22 @@
 import { listen } from "./http_server.js";
 import jsondb from "./jsondb.js";
 import * as U from "./utils.js";
+import { optionValue, CliArgument } from "./cli.js";
 
 export { jsondb };
 
 const state = new Map();
 
-state.set("/api", { any: { use: jsondb() } });
+state.set("/api", {
+  any: {
+    use: jsondb(
+      U.tryCatch(
+        () => optionValue(CliArgument.DRY_RUN) === "true",
+        () => false
+      )
+    ),
+  },
+});
 
 const getState = () => state;
 
@@ -75,5 +85,15 @@ export const compose = () => {};
 export const tap = () => {};
 
 export const localdb = () => {};
+
+if (import.meta.main) {
+  const app = json_server.create();
+  const port = U.tryCatch(
+    () => Number(optionValue(CliArgument.PORT)),
+    () => 8000,
+  );
+  json_server.listen({ app, port });
+  console.log(`Server running at :${port}`);
+}
 
 export default json_server;
