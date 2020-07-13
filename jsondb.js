@@ -117,8 +117,10 @@ export const methodPut = ({ ...props }) => {
   const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
   const parentObj = U.path(parentPath, json);
   const targetObj = U.path(path, json);
-  const canUpdateOrCreate = U.isObject(targetObj) ||
-    (U.isNil(targetObj) && U.isObject(parentObj));
+
+  const canUpdateOrCreate =
+    U.isObject(targetObj) ||
+    (U.isNil(targetObj) && (U.isArray(parentObj) || U.isObject(parentObj)));
   if (canUpdateOrCreate) {
     return {
       data: U.setLens({
