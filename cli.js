@@ -5,6 +5,7 @@ const args = Deno.args;
 export const CliArgument = {
   DRY_RUN: "--dry",
   METHOD: "--method",
+  PORT: "--port",
 };
 
 export const hasOption = (option) => args.some((o) => o.indexOf(option) === 0);
