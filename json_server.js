@@ -1,12 +1,22 @@
 import { listen } from "./http_server.js";
 import jsondb from "./jsondb.js";
 import * as U from "./utils.js";
+import { optionValue, CliArgument } from "./cli.js";
 
 export { jsondb };
 
 const state = new Map();
 
-state.set("/api", { any: { use: jsondb() } });
+state.set("/api", {
+  any: {
+    use: jsondb(
+      U.tryCatch(
+        () => optionValue(CliArgument.DRY_RUN) === "true",
+        () => false
+      )
+    ),
+  },
+});
 
 const getState = () => state;
 
