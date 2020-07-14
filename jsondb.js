@@ -159,7 +159,7 @@ export const tryAllMethods = U.compose(tryPost, tryDelete);
 
 const applyMethods = ({ data, ...props }) => {
   const { method, lensPath, json, query, ctx } = props;
-  return tryAllMethods({ data, method, lensPath, json, query, body: ctx?.reqBody });
+  return tryAllMethods({ data, method, lensPath, json, query, body: ctx?.body });
 };
 
 const buildResponse = ({ data }) => {
