@@ -11,11 +11,14 @@ import {
   tryProps,
   buildResponse,
   handleJson,
+  buildResponseBody,
 } from "../jsondb.js";
 import { readFileStr } from "../deps.js";
 
 const jsonDbTestPath = "tests/jsondb.test.json";
 const jsonDbTest = await readFileStr(jsonDbTestPath);
+
+const stringToRawBody = (string) => new TextEncoder().encode(string);
 
 Deno.test("readJsonDb", async () => {
   const content = await readJsonDb(jsonDbTestPath);
@@ -123,6 +126,41 @@ Deno.test("handleJson", () => {
   );
 });
 
-Deno.test("buildResponseBody", () => {});
+Deno.test("buildResponseBody", () => {
+  const parsedJson = JSON.parse(jsonDbTest);
+  const pathPattern = "/api";
+  let props = {
+    ctx: {
+      req: {
+        url: "/api/laptops",
+        method: "GET",
+      },
+      pathPattern,
+      query: {},
+    },
+    json: JSON.parse(jsonDbTest),
+  };
+
+  let result = buildResponseBody(props);
+  assertEquals(
+    JSON.stringify(parsedJson.laptops),
+    JSON.stringify(result?.resp?.response)
+  );
+
+  props = {
+    ctx: {
+      req: {
+        url: "/api/laptops",
+        method: "POST",
+        body: stringToRawBody(`{ "id": "657", "brand": "apple" }`),
+      },
+      pathPattern,
+      query: {},
+    },
+    json: JSON.parse(jsonDbTest),
+  };
+  result = buildResponseBody(props);
+  console.log(result);
+});
 
 Deno.test("jsondb", () => {});
