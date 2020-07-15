@@ -2,7 +2,7 @@ import {
   assertEquals,
   assertThrowsAsync,
 } from "https://deno.land/std/testing/asserts.ts";
-import {
+import jsondb, {
   tryRestful,
   tryPost,
   readJsonDb,
@@ -12,6 +12,7 @@ import {
   buildResponse,
   handleJson,
   buildResponseBody,
+  processJsonOrContent
 } from "../jsondb.js";
 import { readFileStr } from "../deps.js";
 
@@ -163,4 +164,25 @@ Deno.test("buildResponseBody", () => {
   console.log(result);
 });
 
-Deno.test("jsondb", () => {});
+Deno.test("jsondb", async () => {
+  const parsedJson = JSON.parse(jsonDbTest);
+  const pathPattern = "/api";
+  let ctx = {
+    req: {
+      url: "/api/laptops",
+      method: "GET",
+    },
+    pathPattern,
+    query: {},
+  };
+
+  let result = await jsondb(
+    false,
+    processJsonOrContent,
+    () => checkJsonDb("tests/jsondb.test.json")
+  )(ctx);
+  assertEquals(
+    JSON.stringify(parsedJson.laptops),
+    JSON.stringify(result?.resp?.response)
+  );
+});

@@ -199,7 +199,7 @@ export const buildResponseBody = (props) => {
   };
 };
 
-const processJsonOrContent = (file) => U.asyncCompose(buildResponseBody)(file);
+export const processJsonOrContent = (file) => U.asyncCompose(buildResponseBody)(file);
 
 export const jsondb = (
   dryRun = false,
