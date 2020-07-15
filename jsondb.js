@@ -159,7 +159,14 @@ export const tryAllMethods = U.compose(tryPost, tryDelete);
 
 const applyMethods = ({ data, ...props }) => {
   const { method, lensPath, json, query, ctx } = props;
-  return tryAllMethods({ data, method, lensPath, json, query, body: ctx.reqBody });
+  return tryAllMethods({
+    data,
+    method,
+    lensPath,
+    json,
+    query,
+    body: ctx?.reqBody,
+  });
 };
 
 const buildResponse = ({ data }) => {
@@ -190,7 +197,13 @@ const buildResponseBody = (props) => {
       };
     } else {
       const lensPath = path.split("/").filter((x) => x);
-      const payload = handleJson({ lensPath, json: props.json, query, method, ...props });
+      const payload = handleJson({
+        lensPath,
+        json: props.json,
+        query,
+        method,
+        ...props,
+      });
       return { resp: payload };
     }
   }
@@ -201,11 +214,14 @@ const buildResponseBody = (props) => {
 
 const processJsonOrContent = (file) => U.asyncCompose(buildResponseBody)(file);
 
+const isMutatingRequestMethod = (method) => !["GET", "HEAD"].includes(method);
+
 const jsondb = (
   dryRun = false,
   process = processJsonOrContent,
   checkFile = checkJsonDb
 ) => async (ctx) => {
+  const { method } = ctx.req;
   const file = await checkFile();
   if (file.json || file.fileContent) {
     const res = await process({
@@ -215,6 +231,13 @@ const jsondb = (
     });
     if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
       return U.setTo(res, { status: 404 });
+    }
+    const result = res.resp.response;
+    if (!dryRun && isMutatingRequestMethod(method) && !U.isNil(result)) {
+      await Deno.writeTextFile(
+        "./db.json",
+        JSON.stringify(result, null, 2)
+      );
     }
     return { ...res };
   }

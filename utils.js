@@ -37,7 +37,7 @@ export const isEmpty = (obj) => {
   } else if (isArray(obj)) {
     return obj.length === 0;
   } else if (isString(obj)) {
-    return obj === '';
+    return obj === "";
   } else if (isObject(obj)) {
     return Object.keys(obj).length === 0 && obj.constructor === Object;
   }
@@ -45,12 +45,7 @@ export const isEmpty = (obj) => {
   return false;
 };
 
-export const isNil = (obj) => {
-  if (typeof obj === "undefined" || obj === null) {
-    return true;
-  }
-  return false;
-};
+export const isNil = (obj) => typeof obj === "undefined" || obj === null;
 
 export const setTo = (obj, chunk) => Object.assign({}, obj, chunk);
 
