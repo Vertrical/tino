@@ -13,13 +13,13 @@ const getState = () => {
       use: jsondb(
         U.tryCatch(
           () => optionValue(CliArgument.DRY_RUN) === "true",
-          () => false
-        )
+          () => false,
+        ),
       ),
     },
   });
   return () => state;
-}
+};
 
 const setState = (path, { method, resp, ...props }) => {
   if (!method && props.status) {
@@ -45,13 +45,15 @@ const useDispatch = ({ dispatch = dispatchHandler, ...configs }) => ({
   ...configs,
 });
 
-const updateState = (method) => ({ path, resp, dispatch, ...props }) => {
-  dispatch(path, { method, resp, ...props });
-};
+const updateState = (method) =>
+  ({ path, resp, dispatch, ...props }) => {
+    dispatch(path, { method, resp, ...props });
+  };
 
-const updateNotFoundState = () => ({ path, resp, dispatch }) => {
-  dispatch(path, { status: 404, resp });
-};
+const updateNotFoundState = () =>
+  ({ path, resp, dispatch }) => {
+    dispatch(path, { status: 404, resp });
+  };
 
 const methodHandler = (method) =>
   U.compose(updateState(method), useDispatch, resolveConfig);

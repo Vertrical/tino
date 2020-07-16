@@ -118,8 +118,7 @@ export const methodPut = ({ ...props }) => {
   const parentObj = U.path(parentPath, json);
   const targetObj = U.path(path, json);
 
-  const canUpdateOrCreate =
-    U.isObject(targetObj) ||
+  const canUpdateOrCreate = U.isObject(targetObj) ||
     (U.isNil(targetObj) && (U.isArray(parentObj) || U.isObject(parentObj)));
   if (canUpdateOrCreate) {
     return {
@@ -258,7 +257,8 @@ export const buildResponseBody = (props) => {
   };
 };
 
-export const processJsonOrContent = (file) => U.asyncCompose(buildResponseBody)(file);
+export const processJsonOrContent = (file) =>
+  U.asyncCompose(buildResponseBody)(file);
 
 const jsondb = (
   dryRun = false,

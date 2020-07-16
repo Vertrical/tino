@@ -5,7 +5,7 @@ import * as U from "./utils.js";
 const tryParsePath = ({ matcher, path, url }) => {
   return U.tryCatch(
     () => matcher(path, { decode: decodeURIComponent })(url),
-    () => false
+    () => false,
   );
 };
 
@@ -52,7 +52,7 @@ const prepareContext = ({ req, state }) => {
 const _pickUse = U.compose(
   U.path(["use"]),
   ([head, ..._tail]) => head,
-  Object.values
+  Object.values,
 );
 
 const execMaybeHandler = async ({ maybeFunction, ctx }) => {
@@ -146,11 +146,11 @@ export const createResponder = async ({ resp, status, ...props }) => {
 export const resolveRequestBody = async ({ ...props }) => {
   const { ctx } = props;
   const parsedBody = new TextDecoder("utf-8").decode(
-    await Deno.readAll(ctx.req.body)
+    await Deno.readAll(ctx.req.body),
   );
   const body = U.tryCatch(
     () => JSON.parse(parsedBody),
-    () => parsedBody
+    () => parsedBody,
   );
 
   return { reqBody: body, ...props };
@@ -167,7 +167,7 @@ export const processRequest = U.asyncCompose(
   handleNotFound,
   handleUse,
   resolveRequestBody,
-  prepareContext
+  prepareContext,
 );
 
 export const listen = async ({ app, port = 8000 }) => {
