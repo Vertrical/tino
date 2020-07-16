@@ -7,18 +7,19 @@ export { jsondb };
 
 const state = new Map();
 
-state.set("/api", {
-  any: {
-    use: jsondb(
-      U.tryCatch(
-        () => optionValue(CliArgument.DRY_RUN) === "true",
-        () => false
-      )
-    ),
-  },
-});
-
-const getState = () => state;
+const getState = () => {
+  state.set("/api", {
+    any: {
+      use: jsondb(
+        U.tryCatch(
+          () => optionValue(CliArgument.DRY_RUN) === "true",
+          () => false
+        )
+      ),
+    },
+  });
+  return () => state;
+}
 
 const setState = (path, { method, resp, ...props }) => {
   if (!method && props.status) {
@@ -66,7 +67,7 @@ const jsonserverHandlers = () => ({
   delete: methodHandler("delete"),
   any: methodHandler("any"),
   not_found: notFoundHandler(),
-  getState,
+  getState: getState(),
 });
 
 const create = (handlers = jsonserverHandlers) => {
@@ -79,6 +80,11 @@ const json_server = {
   create,
   listen,
 };
+
+export const getStatus = (status = 400, description = null) => ({
+  status,
+  ...(description && { description }),
+});
 
 export const compose = () => {};
 

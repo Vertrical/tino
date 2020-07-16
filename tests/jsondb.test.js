@@ -4,7 +4,7 @@ import {
 } from "https://deno.land/std/testing/asserts.ts";
 import jsondb, {
   tryRestful,
-  tryPost,
+  methodPost,
   readJsonDb,
   tryDirectLens,
   checkJsonDb,
@@ -18,8 +18,6 @@ import { readFileStr } from "../deps.js";
 
 const jsonDbTestPath = "tests/jsondb.test.json";
 const jsonDbTest = await readFileStr(jsonDbTestPath);
-
-const stringToRawBody = (string) => new TextEncoder().encode(string);
 
 Deno.test("readJsonDb", async () => {
   const content = await readJsonDb(jsonDbTestPath);
@@ -43,10 +41,6 @@ Deno.test("tryDirectLens", () => {
   let json = JSON.parse(jsonDbTest);
   let result = tryDirectLens({ lensPath, json, method });
   assertEquals("comedy", result.data);
-
-  method = "POST";
-  result = tryDirectLens({ lensPath, json, method });
-  assertEquals(null, result.data);
 });
 
 Deno.test("tryRestful", () => {
@@ -78,19 +72,19 @@ Deno.test("tryProps", () => {
   );
 });
 
-Deno.test("tryPost", () => {
+Deno.test("methodPost", () => {
   let body = { id: 124, brand: "apple" };
   let json = JSON.parse(jsonDbTest);
   let method = "POST";
   let lensPath = ["laptops"];
-  let result = tryPost({ body, json, method, lensPath });
+  let result = methodPost({ body, json, method, lensPath });
   assertEquals(result, {
     data: { ...json, laptops: [...json.laptops, body] },
   });
 
   body = ["horror", "sci-fi"];
   lensPath = ["genres"];
-  result = tryPost({ body, json, method, lensPath });
+  result = methodPost({ body, json, method, lensPath });
   assertEquals(result, {
     data: { ...json, genres: json.genres.concat(body) },
   });
