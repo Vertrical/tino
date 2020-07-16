@@ -7,9 +7,9 @@ Deno.test("json_server state", () => {
 
   app.get(() => ({ path: "/ping", resp: "pong" }));
   fake.set("/ping", { get: { resp: "pong" } });
-  assertEquals(JSON.stringify(fake), JSON.stringify(app.getState()));
+  assertEquals(fake.get("/ping"), app.getState().get("/ping"));
 
   app.any(() => ({ path: "/any", resp: "any" }));
   fake.set("/any", { any: { resp: "any" } });
-  assertEquals(JSON.stringify(fake), JSON.stringify(app.getState()));
+  assertEquals(fake.get("/any"), app.getState().get("/any"));
 });
