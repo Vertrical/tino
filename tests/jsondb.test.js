@@ -152,20 +152,24 @@ Deno.test("buildResponseBody", () => {
     JSON.stringify(result?.resp?.response)
   );
 
+  const body = { id: 657, brand: "apple" };
   props = {
     ctx: {
       req: {
         url: "/api/laptops",
         method: "POST",
-        body: stringToRawBody(`{ "id": "657", "brand": "apple" }`),
       },
+      reqBody: body,
       pathPattern,
       query: {},
     },
     json: JSON.parse(jsonDbTest),
   };
   result = buildResponseBody(props);
-  console.log(result);
+  assertEquals(
+    JSON.stringify(parsedJson.laptops.concat(body)),
+    JSON.stringify(result?.resp?.response?.laptops)
+  );
 });
 
 Deno.test("jsondb", async () => {
@@ -186,5 +190,23 @@ Deno.test("jsondb", async () => {
   assertEquals(
     JSON.stringify(parsedJson.laptops),
     JSON.stringify(result?.resp?.response)
+  );
+
+  const body = { id: 259, brand: "hp" };
+  ctx = {
+    req: {
+      url: "/api/laptops",
+      method: "POST",
+    },
+    reqBody: body,
+    pathPattern,
+    query: {},
+  };
+  result = await jsondb(false, processJsonOrContent, () =>
+    checkJsonDb("tests/jsondb.test.json")
+  )(ctx);
+  assertEquals(
+    JSON.stringify(parsedJson.laptops.concat(body)),
+    JSON.stringify(result?.resp?.response?.laptops)
   );
 });
