@@ -185,7 +185,7 @@ Deno.test("jsondb", async () => {
   };
 
   let result = await jsondb(false, processJsonOrContent, () =>
-    checkJsonDb("tests/jsondb.test.json")
+    checkJsonDb(jsonDbTestPath)
   )(ctx);
   assertEquals(
     JSON.stringify(parsedJson.laptops),
@@ -203,7 +203,7 @@ Deno.test("jsondb", async () => {
     query: {},
   };
   result = await jsondb(false, processJsonOrContent, () =>
-    checkJsonDb("tests/jsondb.test.json")
+    checkJsonDb(jsonDbTestPath)
   )(ctx);
   assertEquals(
     JSON.stringify(parsedJson.laptops.concat(body)),
