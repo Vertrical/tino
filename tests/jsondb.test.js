@@ -12,7 +12,7 @@ import jsondb, {
   buildResponse,
   handleJson,
   buildResponseBody,
-  processJsonOrContent
+  processJsonOrContent,
 } from "../jsondb.js";
 import { readFileStr } from "../deps.js";
 
@@ -51,10 +51,14 @@ Deno.test("tryDirectLens", () => {
 
 Deno.test("tryRestful", () => {
   let lensPath = ["laptops", "123"];
-  let data = undefined;
   let json = jsonDbTest;
-  let result = tryRestful({ lensPath, data, json, next: false });
-  assertEquals({ data, json, lensPath }, result);
+  let parsedJson = JSON.parse(json);
+  let method = "GET";
+  let result = tryRestful({ lensPath, json: parsedJson, method });
+  assertEquals(
+    JSON.stringify(parsedJson.laptops[0]),
+    JSON.stringify(result.data)
+  );
 });
 
 Deno.test("tryProps", () => {
@@ -176,10 +180,8 @@ Deno.test("jsondb", async () => {
     query: {},
   };
 
-  let result = await jsondb(
-    false,
-    processJsonOrContent,
-    () => checkJsonDb("tests/jsondb.test.json")
+  let result = await jsondb(false, processJsonOrContent, () =>
+    checkJsonDb("tests/jsondb.test.json")
   )(ctx);
   assertEquals(
     JSON.stringify(parsedJson.laptops),
