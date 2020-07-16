@@ -19,7 +19,7 @@ export const readJsonDb = async (dbPathname = "./db.json") => {
 export const checkJsonDb = async (dbPathname = "./db.json") => {
   try {
     await fileExists(dbPathname);
-    const { json, fileContent } = await readJsonDb();
+    const { json, fileContent } = await readJsonDb(dbPathname);
     return { json, fileContent };
   } catch (e) {
     console.warn("warn: ", e.message);
@@ -27,7 +27,7 @@ export const checkJsonDb = async (dbPathname = "./db.json") => {
   }
 };
 
-const tryDirectLens = ({ lensPath, json, ...props }) => {
+export const tryDirectLens = ({ lensPath, json, ...props }) => {
   const data = props.method === "GET" ? U.path(lensPath, json) : null;
   return { lensPath, data, json, ...props };
 };
@@ -63,7 +63,7 @@ export const tryRestful = ({
   }
 };
 
-const tryProps = ({ data, ...props }) => {
+export const tryProps = ({ data, ...props }) => {
   const { method, lensPath, json } = props;
   if (method !== "GET") {
     return { data, ...props };
@@ -116,7 +116,7 @@ export const tryPost = ({ ...props }) => {
   return { status: 400 };
 };
 
-const tryDelete = ({ ...props }) => {
+export const tryDelete = ({ ...props }) => {
   if (props.method !== "DELETE") {
     return props;
   }
@@ -169,7 +169,7 @@ const applyMethods = ({ data, ...props }) => {
   });
 };
 
-const buildResponse = ({ data }) => {
+export const buildResponse = ({ data }) => {
   if (U.isArray(data)) {
     return { response: [...data] };
   } else if (U.isObject(data)) {
@@ -178,7 +178,7 @@ const buildResponse = ({ data }) => {
   return { response: data };
 };
 
-const handleJson = U.compose(
+export const handleJson = U.compose(
   buildResponse,
   applyMethods,
   tryProps,
@@ -186,7 +186,7 @@ const handleJson = U.compose(
   tryDirectLens
 );
 
-const buildResponseBody = (props) => {
+export const buildResponseBody = (props) => {
   const { url, method } = props.ctx.req;
   const { pathPattern, query } = props.ctx;
   if (U.isObject(props.json)) {
@@ -212,11 +212,11 @@ const buildResponseBody = (props) => {
   };
 };
 
-const processJsonOrContent = (file) => U.asyncCompose(buildResponseBody)(file);
+export const processJsonOrContent = (file) => U.asyncCompose(buildResponseBody)(file);
 
 const isMutatingRequestMethod = (method) => !["GET", "HEAD"].includes(method);
 
-const jsondb = (
+export const jsondb = (
   dryRun = false,
   process = processJsonOrContent,
   checkFile = checkJsonDb

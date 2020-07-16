@@ -5,11 +5,11 @@ Deno.test("json_server state", () => {
   let app = json_server.create();
   let fake = new Map();
 
-  app.get(() => ({ path: "/ping", body: "pong" }));
-  fake.set("/ping", { get: { body: "pong" } });
-  assertEquals(fake, app.getState());
+  app.get(() => ({ path: "/ping", resp: "pong" }));
+  fake.set("/ping", { get: { resp: "pong" } });
+  assertEquals(fake.get("/ping"), app.getState().get("/ping"));
 
-  app.any(() => ({ path: "/any", body: "any" }));
-  fake.set("/any", { any: { body: "any" } });
-  assertEquals(fake, app.getState());
+  app.any(() => ({ path: "/any", resp: "any" }));
+  fake.set("/any", { any: { resp: "any" } });
+  assertEquals(fake.get("/any"), app.getState().get("/any"));
 });
