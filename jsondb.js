@@ -248,22 +248,35 @@ export const buildResponseBody = (props) => {
 export const processJsonOrContent = (file) =>
   U.asyncCompose(buildResponseBody)(file);
 
-const jsondb = (
+const isMutatingRequestMethod = (method) => !["GET", "HEAD"].includes(method);
+
+export const jsondb = (
   dryRun = false,
   process = processJsonOrContent,
   checkFile = checkJsonDb,
-) =>
-  async (ctx) => {
-    const file = await checkFile();
-    if (file.json || file.fileContent) {
-      const res = await process({
-        json: file.json,
-        fileContent: file.fileContent,
-        ctx,
-      });
-      return res;
+  jsonDbPath = "./db.json",
+) => async (ctx) => {
+  const { method } = ctx.req;
+  const file = await checkFile();
+  if (file.json || file.fileContent) {
+    const res = await process({
+      json: file.json,
+      fileContent: file.fileContent,
+      ctx,
+    });
+    if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
+      return U.setTo(res, { status: 404 });
     }
-    return { status: 404 };
-  };
+    const result = res.resp.response;
+    if (!dryRun && isMutatingRequestMethod(method) && !U.isNil(result)) {
+      await Deno.writeTextFile(
+        jsonDbPath,
+        JSON.stringify(result, null, 2)
+      );
+    }
+    return { ...res };
+  }
+  return { status: 404 };
+};
 
 export default jsondb;
