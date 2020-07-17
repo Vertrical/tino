@@ -13,6 +13,7 @@ import jsondb, {
   handleJson,
   buildResponseBody,
   processJsonOrContent,
+  methodPatch,
 } from "../jsondb.js";
 import { readFileStr } from "../deps.js";
 
@@ -87,6 +88,33 @@ Deno.test("methodPost", () => {
   result = methodPost({ body, json, method, lensPath });
   assertEquals(result, {
     data: { ...json, genres: json.genres.concat(body) },
+  });
+});
+
+Deno.test("methodPatch", () => {
+  let body = { price: 98000 };
+  let json = JSON.parse(jsonDbTest);
+  let target = json.laptops[0];
+  let method = "PATCH";
+  let lensPath = ["laptops", target.id.toString()];
+  let result = methodPatch({ body, json, method, lensPath });
+  assertEquals(result, {
+    data: {
+      ...json,
+      laptops: json.laptops.map((obj) =>
+        obj.id == target.id ? { ...obj, ...body } : obj
+      ),
+    },
+  });
+
+  body = { sunny: "yellow" };
+  lensPath = ["color"];
+  result = methodPatch({ body, json, method, lensPath });
+  assertEquals(result, {
+    data: {
+      ...json,
+      color: { ...json.color, ...body },
+    },
   });
 });
 
