@@ -5,7 +5,7 @@ import * as U from "./utils.js";
 const tryParsePath = ({ matcher, path, url }) => {
   return U.tryCatch(
     () => matcher(path, { decode: decodeURIComponent })(url),
-    () => false
+    () => false,
   );
 };
 
@@ -15,7 +15,7 @@ const destructDeps = ({ serve, app, port = 8000 }) => {
   return { server, state };
 };
 
-const prepareContext = ({ req, state }) => {
+const prepareContext = ({ req, state, bodyReader }) => {
   const url = req.url;
   const baseUrl = url.split("?")[0];
   const queryParamsString = url.split("?")[1];
@@ -46,13 +46,13 @@ const prepareContext = ({ req, state }) => {
       Object.assign(responseDefinition.query, { [queryName]: queryValue });
     }
   }
-  return { ctx: { req, state }, ...responseDefinition };
+  return { ctx: { req, state, bodyReader }, ...responseDefinition };
 };
 
 const _pickUse = U.compose(
   U.path(["use"]),
   ([head, ..._tail]) => head,
-  Object.values
+  Object.values,
 );
 
 const execMaybeHandler = async ({ maybeFunction, ctx }) => {
@@ -125,13 +125,15 @@ export const createResponder = async ({ resp, status, ...props }) => {
   if (U.isAsyncFunction(resp)) {
     const _resp = await resp();
     responderObject.body = _resp;
-  } else if (U.isObject(resp) || U.isArray(resp)) {
+  } else if (U.isObject(resp)) {
     responderObject.body = { ...resp };
+  } else if (U.isArray(resp)) {
+    responderObject.body = [...resp];
   } else if (U.isFunction(resp)) {
     const _resp = resp();
     responderObject.body = _resp;
   }
-  if (U.isObject(responderObject.body)) {
+  if (U.isObject(responderObject.body) || U.isArray(responderObject.body)) {
     responderObject.body = JSON.stringify(responderObject.body);
     responderObject.headers = new Headers({
       "content-type": "application/json",
@@ -145,15 +147,18 @@ export const createResponder = async ({ resp, status, ...props }) => {
 
 export const resolveRequestBody = async ({ ...props }) => {
   const { ctx } = props;
-  const parsedBody = new TextDecoder("utf-8").decode(
-    await Deno.readAll(ctx.req.body)
-  );
+  const { bodyReader } = ctx;
+  const parsedBody = await bodyReader(ctx.req.body);
   const body = U.tryCatch(
     () => JSON.parse(parsedBody),
-    () => parsedBody
+    () => parsedBody,
   );
+  return { body, ...props };
+};
 
-  return { reqBody: body, ...props };
+export const HttpStatus = {
+  BAD_REQUEST: 400,
+  NOT_FOUND: 404,
 };
 
 export const processRequest = U.asyncCompose(
@@ -162,13 +167,20 @@ export const processRequest = U.asyncCompose(
   handleNotFound,
   handleUse,
   resolveRequestBody,
-  prepareContext
+  prepareContext,
 );
+
+const _bodyReader = async (body) =>
+  new TextDecoder("utf-8").decode(
+    await Deno.readAll(body),
+  );
 
 export const listen = async ({ app, port = 8000 }) => {
   const { server, state } = destructDeps({ serve, app, port });
   for await (const req of server) {
-    const responderObject = await processRequest({ req, state });
+    const responderObject = await processRequest(
+      { req, state, bodyReader: _bodyReader },
+    );
     req.respond(responderObject);
   }
 };
