@@ -14,10 +14,34 @@ import jsondb, {
   buildResponseBody,
   processJsonOrContent,
 } from "../jsondb.js";
-import { readFileStr } from "../deps.js";
+import { readFileStr, readJson } from "../deps.js";
+import * as U from "../utils.js";
 
 const jsonDbTestPath = "tests/jsondb.test.json";
+const jsonDbTestCopyPath = "tests/jsondb_copy.test.json";
 const jsonDbTest = await readFileStr(jsonDbTestPath);
+
+const beforeAll = async () => {
+  try {
+    await Deno.copyFile(jsonDbTestPath, jsonDbTestCopyPath);
+  } catch (e) {
+    console.warn(
+      `There was an error copying the file ${jsonDbTestCopyPath}: ${e}`
+    );
+  }
+};
+
+const afterAll = async () => {
+  try {
+    await Deno.remove(jsonDbTestCopyPath);
+  } catch (e) {
+    console.warn(
+      `There was an error deleting the file ${jsonDbTestCopyPath}: ${e}`
+    );
+  }
+};
+
+Deno.test("beforeAll jsondb", beforeAll);
 
 Deno.test("readJsonDb", async () => {
   const content = await readJsonDb(jsonDbTestPath);
@@ -179,7 +203,7 @@ Deno.test("jsondb", async () => {
   };
 
   let result = await jsondb(
-    false,
+    true,
     processJsonOrContent,
     () => checkJsonDb(jsonDbTestPath),
   )(ctx);
@@ -188,7 +212,7 @@ Deno.test("jsondb", async () => {
     JSON.stringify(result?.resp?.response),
   );
 
-  const body = { id: 259, brand: "hp" };
+  let body = { id: 259, brand: "hp" };
   ctx = {
     req: {
       url: "/api/laptops",
@@ -202,9 +226,22 @@ Deno.test("jsondb", async () => {
     false,
     processJsonOrContent,
     () => checkJsonDb(jsonDbTestPath),
+    jsonDbTestCopyPath
   )(ctx);
+  const newContent = await U.tryCatch(
+    async () => await readJson(jsonDbTestCopyPath),
+    () => ({})
+  );
+
   assertEquals(
     JSON.stringify(parsedJson.laptops.concat(body)),
     JSON.stringify(result?.resp?.response?.laptops),
   );
+
+  assertEquals(
+    JSON.stringify(newContent),
+    JSON.stringify(result?.resp?.response)
+  );
 });
+
+Deno.test("afterAll jsondb", afterAll);
