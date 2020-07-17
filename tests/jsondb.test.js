@@ -14,7 +14,7 @@ import jsondb, {
   buildResponseBody,
   processJsonOrContent,
 } from "../jsondb.js";
-import { readFileStr } from "../deps.js";
+import { readFileStr, readJson } from "../deps.js";
 import * as U from "../utils.js";
 
 const jsonDbTestPath = "tests/jsondb.test.json";
@@ -229,7 +229,7 @@ Deno.test("jsondb", async () => {
     jsonDbTestCopyPath
   )(ctx);
   const newContent = await U.tryCatch(
-    async () => JSON.parse(await readFileStr(jsonDbTestCopyPath)),
+    async () => await readJson(jsonDbTestCopyPath),
     () => ({})
   );
 
