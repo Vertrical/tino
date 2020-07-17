@@ -177,7 +177,7 @@ Deno.test("buildResponseBody", () => {
         url: "/api/laptops",
         method: "POST",
       },
-      reqBody: body,
+      body,
       pathPattern,
       query: {},
     },
@@ -218,7 +218,7 @@ Deno.test("jsondb", async () => {
       url: "/api/laptops",
       method: "POST",
     },
-    reqBody: body,
+    body,
     pathPattern,
     query: {},
   };
