@@ -78,37 +78,25 @@ export const tryProps = ({ data, ...props }) => {
 
 export const methodPost = ({ ...props }) => {
   const { lensPath, json, body } = props;
-  const parentPath = [...lensPath];
-  const parentView = U.view(U.lensPath(parentPath))(json);
-  const isRootPath = parentPath.length === 0;
-  if (isRootPath) {
-    return U.isObject(body)
-      ? {
-        data: U.setLens({
-          path: parentPath,
-          content: { ...parentView, ...body },
-          obj: json,
-        }),
-      }
-      : getStatus(HttpStatus.BAD_REQUEST);
-  }
-  if (U.isObject(parentView) && U.isObject(body)) {
+  const path = restfulLensPath(lensPath, json);
+  const targetObj = U.path(path, json);
+
+  const canCreate =
+    !U.isNil(body) &&
+    !U.isNil(targetObj) &&
+    (U.isArray(targetObj) || U.isObject(targetObj));
+  if (canCreate) {
     return {
       data: U.setLens({
-        path: parentPath,
-        content: { ...parentView, ...body },
-        obj: json,
-      }),
-    };
-  } else if (U.isArray(parentView)) {
-    return {
-      data: U.setLens({
-        path: parentPath,
-        content: parentView.concat(U.isArray(body) ? [...body] : body),
+        path: path,
+        content: U.isArray(targetObj)
+          ? targetObj.concat(body)
+          : { ...targetObj, ...body },
         obj: json,
       }),
     };
   }
+  return { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
 export const methodPut = ({ ...props }) => {
@@ -182,7 +170,7 @@ const applyMethod = ({ data, ...props }) => {
     lensPath,
     json,
     query,
-    body: ctx?.reqBody,
+    body: ctx?.body,
   });
 };
 
