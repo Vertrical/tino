@@ -82,7 +82,7 @@ export const methodPost = ({ ...props }) => {
   const targetObj = U.path(path, json);
 
   const canCreate =
-    U.isObject(body) &&
+    !U.isNil(body) &&
     !U.isNil(targetObj) &&
     (U.isArray(targetObj) || U.isObject(targetObj));
   if (canCreate) {
