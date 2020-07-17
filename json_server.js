@@ -7,18 +7,19 @@ export { jsondb };
 
 const state = new Map();
 
-state.set("/api", {
-  any: {
-    use: jsondb(
-      U.tryCatch(
-        () => optionValue(CliArgument.DRY_RUN) === "true",
-        () => false
-      )
-    ),
-  },
-});
-
-const getState = () => state;
+const getState = () => {
+  state.set("/api", {
+    any: {
+      use: jsondb(
+        U.tryCatch(
+          () => optionValue(CliArgument.DRY_RUN) === "true",
+          () => false,
+        ),
+      ),
+    },
+  });
+  return () => state;
+};
 
 const setState = (path, { method, resp, ...props }) => {
   if (!method && props.status) {
@@ -44,13 +45,15 @@ const useDispatch = ({ dispatch = dispatchHandler, ...configs }) => ({
   ...configs,
 });
 
-const updateState = (method) => ({ path, resp, dispatch, ...props }) => {
-  dispatch(path, { method, resp, ...props });
-};
+const updateState = (method) =>
+  ({ path, resp, dispatch, ...props }) => {
+    dispatch(path, { method, resp, ...props });
+  };
 
-const updateNotFoundState = () => ({ path, resp, dispatch }) => {
-  dispatch(path, { status: 404, resp });
-};
+const updateNotFoundState = () =>
+  ({ path, resp, dispatch }) => {
+    dispatch(path, { status: 404, resp });
+  };
 
 const methodHandler = (method) =>
   U.compose(updateState(method), useDispatch, resolveConfig);
@@ -66,7 +69,7 @@ const jsonserverHandlers = () => ({
   delete: methodHandler("delete"),
   any: methodHandler("any"),
   not_found: notFoundHandler(),
-  getState,
+  getState: getState(),
 });
 
 const create = (handlers = jsonserverHandlers) => {
@@ -79,6 +82,11 @@ const json_server = {
   create,
   listen,
 };
+
+export const getStatus = (status = 400, description = null) => ({
+  status,
+  ...(description && { description }),
+});
 
 export const compose = () => {};
 

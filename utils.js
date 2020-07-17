@@ -1,14 +1,18 @@
-const _curry = (fn) => (...args) =>
-  args.length >= fn.length ? fn(...args) : _curry(fn.bind(undefined, ...args));
+const _curry = (fn) =>
+  (...args) =>
+    args.length >= fn.length
+      ? fn(...args)
+      : _curry(fn.bind(undefined, ...args));
 
-export const asyncCompose = (...functions) => (input) =>
-  functions.reduceRight(
-    (chain, func) => chain.then(func),
-    Promise.resolve(input)
-  );
+export const asyncCompose = (...functions) =>
+  (input) =>
+    functions.reduceRight(
+      (chain, func) => chain.then(func),
+      Promise.resolve(input),
+    );
 
-export const compose = (...fns) => (data) =>
-  fns.reduceRight((value, fn) => fn(value), data);
+export const compose = (...fns) =>
+  (data) => fns.reduceRight((value, fn) => fn(value), data);
 
 export const isString = (obj) =>
   Object.prototype.toString.call(obj) === "[object String]";
@@ -37,7 +41,7 @@ export const isEmpty = (obj) => {
   } else if (isArray(obj)) {
     return obj.length === 0;
   } else if (isString(obj)) {
-    return obj === '';
+    return obj === "";
   } else if (isObject(obj)) {
     return Object.keys(obj).length === 0 && obj.constructor === Object;
   }
@@ -51,6 +55,13 @@ export const isNil = (obj) => {
   }
   return false;
 };
+
+export const ifElse = _curry((condition, onTrue, onFalse) =>
+  (...args) =>
+    condition.apply(this, ...args)
+      ? onTrue.apply(this, ...args)
+      : onFalse.apply(this, ...args)
+);
 
 export const setTo = (obj, chunk) => Object.assign({}, obj, chunk);
 
@@ -92,13 +103,40 @@ export const containsAll = (inputObj, obj) => {
   return true;
 };
 
+export const cond = (conditions) =>
+  (method) => {
+    const _cond = conditions.find(
+      (cond) => has("when", cond) && cond.when(method),
+    );
+    if (!_cond) {
+      return (props) => props;
+    }
+    return path(["use"], _cond);
+  };
+
+export const eq = (val) => (comp) => val === comp;
+
+export const when = (condFunc, applyFunc) =>
+  (props) => {
+    if (condFunc(props)) {
+      return applyFunc(props);
+    }
+    return props;
+  };
+
 // lenses
 const prop = _curry((k, obj) => (obj ? obj[k] : undefined));
 
-const assoc = _curry((k, v, obj) => ({ ...obj, [k]: v }));
+const assoc = _curry((k, v, obj) => {
+  if (!Number.isNaN(Number(k))) {
+    obj[k] = v;
+    return [...obj];
+  }
+  return { ...obj, [k]: v };
+});
 
-const lens = _curry((getter, setter) => (F) => (target) =>
-  F(getter(target)).map((focus) => setter(focus, target))
+const lens = _curry((getter, setter) =>
+  (F) => (target) => F(getter(target)).map((focus) => setter(focus, target))
 );
 
 const lensProp = (k) => lens(prop(k), assoc(k));

@@ -4,7 +4,7 @@ import {
 } from "https://deno.land/std/testing/asserts.ts";
 import jsondb, {
   tryRestful,
-  tryPost,
+  methodPost,
   readJsonDb,
   tryDirectLens,
   checkJsonDb,
@@ -18,8 +18,6 @@ import { readFileStr } from "../deps.js";
 
 const jsonDbTestPath = "tests/jsondb.test.json";
 const jsonDbTest = await readFileStr(jsonDbTestPath);
-
-const stringToRawBody = (string) => new TextEncoder().encode(string);
 
 Deno.test("readJsonDb", async () => {
   const content = await readJsonDb(jsonDbTestPath);
@@ -43,10 +41,6 @@ Deno.test("tryDirectLens", () => {
   let json = JSON.parse(jsonDbTest);
   let result = tryDirectLens({ lensPath, json, method });
   assertEquals("comedy", result.data);
-
-  method = "POST";
-  result = tryDirectLens({ lensPath, json, method });
-  assertEquals(null, result.data);
 });
 
 Deno.test("tryRestful", () => {
@@ -57,7 +51,7 @@ Deno.test("tryRestful", () => {
   let result = tryRestful({ lensPath, json: parsedJson, method });
   assertEquals(
     JSON.stringify(parsedJson.laptops[0]),
-    JSON.stringify(result.data)
+    JSON.stringify(result.data),
   );
 });
 
@@ -74,23 +68,23 @@ Deno.test("tryProps", () => {
   });
   assertEquals(
     JSON.stringify(result.data[0]),
-    JSON.stringify(parsedJson.laptops[0])
+    JSON.stringify(parsedJson.laptops[0]),
   );
 });
 
-Deno.test("tryPost", () => {
+Deno.test("methodPost", () => {
   let body = { id: 124, brand: "apple" };
   let json = JSON.parse(jsonDbTest);
   let method = "POST";
   let lensPath = ["laptops"];
-  let result = tryPost({ body, json, method, lensPath });
+  let result = methodPost({ body, json, method, lensPath });
   assertEquals(result, {
     data: { ...json, laptops: [...json.laptops, body] },
   });
 
   body = ["horror", "sci-fi"];
   lensPath = ["genres"];
-  result = tryPost({ body, json, method, lensPath });
+  result = methodPost({ body, json, method, lensPath });
   assertEquals(result, {
     data: { ...json, genres: json.genres.concat(body) },
   });
@@ -100,13 +94,13 @@ Deno.test("buildResponse", () => {
   let response = buildResponse({ data: [1, 2, 3] });
   assertEquals(
     JSON.stringify({ response: [1, 2, 3] }),
-    JSON.stringify(response)
+    JSON.stringify(response),
   );
 
   response = buildResponse({ data: { a: 1, b: 2 } });
   assertEquals(
     JSON.stringify({ response: { a: 1, b: 2 } }),
-    JSON.stringify(response)
+    JSON.stringify(response),
   );
 
   response = buildResponse({ data: null });
@@ -120,14 +114,14 @@ Deno.test("handleJson", () => {
   let result = handleJson({ method, lensPath, json });
   assertEquals(
     JSON.stringify({ response: json.genres[0] }),
-    JSON.stringify(result)
+    JSON.stringify(result),
   );
 
   lensPath = ["laptops", "123"];
   result = handleJson({ method, lensPath, json });
   assertEquals(
     JSON.stringify({ response: json.laptops[0] }),
-    JSON.stringify(result)
+    JSON.stringify(result),
   );
 });
 
@@ -149,7 +143,7 @@ Deno.test("buildResponseBody", () => {
   let result = buildResponseBody(props);
   assertEquals(
     JSON.stringify(parsedJson.laptops),
-    JSON.stringify(result?.resp?.response)
+    JSON.stringify(result?.resp?.response),
   );
 
   const body = { id: 657, brand: "apple" };
@@ -168,7 +162,7 @@ Deno.test("buildResponseBody", () => {
   result = buildResponseBody(props);
   assertEquals(
     JSON.stringify(parsedJson.laptops.concat(body)),
-    JSON.stringify(result?.resp?.response?.laptops)
+    JSON.stringify(result?.resp?.response?.laptops),
   );
 });
 
@@ -184,12 +178,14 @@ Deno.test("jsondb", async () => {
     query: {},
   };
 
-  let result = await jsondb(false, processJsonOrContent, () =>
-    checkJsonDb(jsonDbTestPath)
+  let result = await jsondb(
+    false,
+    processJsonOrContent,
+    () => checkJsonDb(jsonDbTestPath),
   )(ctx);
   assertEquals(
     JSON.stringify(parsedJson.laptops),
-    JSON.stringify(result?.resp?.response)
+    JSON.stringify(result?.resp?.response),
   );
 
   const body = { id: 259, brand: "hp" };
@@ -202,11 +198,13 @@ Deno.test("jsondb", async () => {
     pathPattern,
     query: {},
   };
-  result = await jsondb(false, processJsonOrContent, () =>
-    checkJsonDb(jsonDbTestPath)
+  result = await jsondb(
+    false,
+    processJsonOrContent,
+    () => checkJsonDb(jsonDbTestPath),
   )(ctx);
   assertEquals(
     JSON.stringify(parsedJson.laptops.concat(body)),
-    JSON.stringify(result?.resp?.response?.laptops)
+    JSON.stringify(result?.resp?.response?.laptops),
   );
 });
