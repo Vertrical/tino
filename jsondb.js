@@ -238,21 +238,15 @@ export const buildResponseBody = (props) => {
   const { pathPattern, query } = props.ctx;
   if (U.isObject(props.json)) {
     const path = url.split("?")[0].replace(pathPattern, "");
-    if (U.isEmpty(path)) {
-      return {
-        resp: buildResponse({ data: props.json, status: 200 }),
-      };
-    } else {
-      const lensPath = path.split("/").filter((x) => x);
-      const payload = handleJson({
-        lensPath,
-        json: props.json,
-        query,
-        method,
-        ...props,
-      });
-      return { resp: { response: payload.response }, status: payload.status };
-    }
+    const lensPath = path.split("/").filter((x) => x);
+    const payload = handleJson({
+      lensPath,
+      json: props.json,
+      query,
+      method,
+      ...props,
+    });
+    return { resp: { response: payload.response }, status: payload.status };
   }
   return {
     resp: props.fileContent,
