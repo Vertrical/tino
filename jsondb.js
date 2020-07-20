@@ -168,6 +168,7 @@ const applyMethod = ({ data, ...props }) => {
     { when: U.eq("POST"), use: methodPost },
     { when: U.eq("PUT"), use: methodPut },
     { when: U.eq("DELETE"), use: methodDelete },
+    { when: U.eq("PATCH"), use: methodPatch },
   ]);
   const methodHandler = getMethodHandler(method);
   return methodHandler({
@@ -251,28 +252,29 @@ export const jsondb = (
   process = processJsonOrContent,
   checkFile = checkJsonDb,
   jsonDbPath = "./db.json",
-) => async (ctx) => {
-  const { method } = ctx.req;
-  const file = await checkFile();
-  if (file.json || file.fileContent) {
-    const res = await process({
-      json: file.json,
-      fileContent: file.fileContent,
-      ctx,
-    });
-    if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
-      return U.setTo(res, { status: 404 });
+) =>
+  async (ctx) => {
+    const { method } = ctx.req;
+    const file = await checkFile();
+    if (file.json || file.fileContent) {
+      const res = await process({
+        json: file.json,
+        fileContent: file.fileContent,
+        ctx,
+      });
+      if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
+        return U.setTo(res, { status: 404 });
+      }
+      const result = res.resp.response;
+      if (!dryRun && isMutatingRequestMethod(method) && !U.isNil(result)) {
+        await Deno.writeTextFile(
+          jsonDbPath,
+          JSON.stringify(result, null, 2),
+        );
+      }
+      return { ...res };
     }
-    const result = res.resp.response;
-    if (!dryRun && isMutatingRequestMethod(method) && !U.isNil(result)) {
-      await Deno.writeTextFile(
-        jsonDbPath,
-        JSON.stringify(result, null, 2)
-      );
-    }
-    return { ...res };
-  }
-  return { status: 404 };
-};
+    return { status: 404 };
+  };
 
 export default jsondb;
