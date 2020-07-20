@@ -78,37 +78,25 @@ export const tryProps = ({ data, ...props }) => {
 
 export const methodPost = ({ ...props }) => {
   const { lensPath, json, body } = props;
-  const parentPath = [...lensPath];
-  const parentView = U.view(U.lensPath(parentPath))(json);
-  const isRootPath = parentPath.length === 0;
-  if (isRootPath) {
-    return U.isObject(body)
-      ? {
-          data: U.setLens({
-            path: parentPath,
-            content: { ...parentView, ...body },
-            obj: json,
-          }),
-        }
-      : getStatus(HttpStatus.BAD_REQUEST);
-  }
-  if (U.isObject(parentView) && U.isObject(body)) {
+  const path = restfulLensPath(lensPath, json);
+  const targetObj = U.path(path, json);
+
+  const canCreate =
+    !U.isNil(body) &&
+    !U.isNil(targetObj) &&
+    (U.isArray(targetObj) || U.isObject(targetObj));
+  if (canCreate) {
     return {
       data: U.setLens({
-        path: parentPath,
-        content: { ...parentView, ...body },
-        obj: json,
-      }),
-    };
-  } else if (U.isArray(parentView)) {
-    return {
-      data: U.setLens({
-        path: parentPath,
-        content: parentView.concat(U.isArray(body) ? [...body] : body),
+        path: path,
+        content: U.isArray(targetObj)
+          ? targetObj.concat(body)
+          : { ...targetObj, ...body },
         obj: json,
       }),
     };
   }
+  return { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
 export const methodPut = ({ ...props }) => {
@@ -278,11 +266,15 @@ export const buildResponseBody = (props) => {
 export const processJsonOrContent = (file) =>
   U.asyncCompose(buildResponseBody)(file);
 
-const jsondb = (
+const isMutatingRequestMethod = (method) => !["GET", "HEAD"].includes(method);
+
+export const jsondb = (
   dryRun = false,
   process = processJsonOrContent,
-  checkFile = checkJsonDb
+  checkFile = checkJsonDb,
+  jsonDbPath = "./db.json",
 ) => async (ctx) => {
+  const { method } = ctx.req;
   const file = await checkFile();
   if (file.json || file.fileContent) {
     const res = await process({
@@ -290,7 +282,17 @@ const jsondb = (
       fileContent: file.fileContent,
       ctx,
     });
-    return res;
+    if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
+      return U.setTo(res, { status: 404 });
+    }
+    const result = res.resp.response;
+    if (!dryRun && isMutatingRequestMethod(method) && !U.isNil(result)) {
+      await Deno.writeTextFile(
+        jsonDbPath,
+        JSON.stringify(result, null, 2)
+      );
+    }
+    return { ...res };
   }
   return { status: 404 };
 };
