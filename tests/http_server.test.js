@@ -22,5 +22,5 @@ Deno.test("http_server POST", async () => {
   state.set("/items", { post: { resp: (stuff) => ({ ...stuff.body }) } });
   const bodyReader = async () => ({ to: "Santa" });
   const res = await processRequest({ req, state, bodyReader });
-  assertEquals(JSON.stringify({ to: "Santa" }), res.body)
+  assertEquals(JSON.stringify({ to: "Santa" }), res.body);
 });

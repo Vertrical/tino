@@ -69,7 +69,7 @@ export const tryProps = ({ data, ...props }) => {
   const { method, lensPath, json } = props;
   if (U.isArray(data) && !U.isEmpty(props.query)) {
     const res = data.filter(
-      (item) => U.isObject(item) && U.containsAll(props.query, item)
+      (item) => U.isObject(item) && U.containsAll(props.query, item),
     );
     return { data: res, method, lensPath, json };
   }
@@ -84,12 +84,12 @@ export const methodPost = ({ ...props }) => {
   if (isRootPath) {
     return U.isObject(body)
       ? {
-          data: U.setLens({
-            path: parentPath,
-            content: { ...parentView, ...body },
-            obj: json,
-          }),
-        }
+        data: U.setLens({
+          path: parentPath,
+          content: { ...parentView, ...body },
+          obj: json,
+        }),
+      }
       : getStatus(HttpStatus.BAD_REQUEST);
   }
   if (U.isObject(parentView) && U.isObject(body)) {
@@ -118,8 +118,7 @@ export const methodPut = ({ ...props }) => {
   const parentObj = U.path(parentPath, json);
   const targetObj = U.path(path, json);
 
-  const canUpdateOrCreate =
-    U.isObject(targetObj) ||
+  const canUpdateOrCreate = U.isObject(targetObj) ||
     (U.isNil(targetObj) && (U.isArray(parentObj) || U.isObject(parentObj)));
   if (canUpdateOrCreate) {
     return {
@@ -138,8 +137,8 @@ export const methodPatch = ({ ...props }) => {
   const path = restfulLensPath(lensPath, json);
   const targetObj = U.path(path, json);
 
-  const canUpdate =
-    U.isObject(targetObj) && U.isObject(body) && !U.isEmpty(path);
+  const canUpdate = U.isObject(targetObj) && U.isObject(body) &&
+    !U.isEmpty(path);
   if (canUpdate) {
     return {
       data: U.setLens({
@@ -168,7 +167,7 @@ const methodDelete = ({ ...props }) => {
     const view = U.view(U.lensPath(lensPath))(json);
     if (U.isArray(view) && !U.isEmpty(props.query)) {
       const withQueryApplied = view.filter(
-        (item) => U.isObject(item) && !U.containsAll(props.query, item)
+        (item) => U.isObject(item) && !U.containsAll(props.query, item),
       );
       return {
         data: U.setLens({
@@ -220,7 +219,7 @@ const isMethod = (method) => (props) => props.method === method;
 
 const applyGetMethod = U.when(
   isMethod("GET"),
-  U.compose(tryProps, tryDirectLens, tryRestful)
+  U.compose(tryProps, tryDirectLens, tryRestful),
 );
 
 export const handleJson = U.compose(buildResponse, applyMethod, applyGetMethod);
@@ -230,7 +229,6 @@ const restfulLensPath = (lensPath, json) => {
   for (
     let pathItem = null, pathCopy = [...lensPath], current = { ...json };
     (pathItem = pathCopy.shift());
-
   ) {
     if (U.isObject(current)) {
       current = current[pathItem];
@@ -281,18 +279,19 @@ export const processJsonOrContent = (file) =>
 const jsondb = (
   dryRun = false,
   process = processJsonOrContent,
-  checkFile = checkJsonDb
-) => async (ctx) => {
-  const file = await checkFile();
-  if (file.json || file.fileContent) {
-    const res = await process({
-      json: file.json,
-      fileContent: file.fileContent,
-      ctx,
-    });
-    return res;
-  }
-  return { status: 404 };
-};
+  checkFile = checkJsonDb,
+) =>
+  async (ctx) => {
+    const file = await checkFile();
+    if (file.json || file.fileContent) {
+      const res = await process({
+        json: file.json,
+        fileContent: file.fileContent,
+        ctx,
+      });
+      return res;
+    }
+    return { status: 404 };
+  };
 
 export default jsondb;
