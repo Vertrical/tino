@@ -13,6 +13,7 @@ import jsondb, {
   handleJson,
   buildResponseBody,
   processJsonOrContent,
+  methodDelete,
 } from "../jsondb.js";
 import { readFileStr, readJson } from "../deps.js";
 import * as U from "../utils.js";
@@ -111,6 +112,25 @@ Deno.test("methodPost", () => {
   result = methodPost({ body, json, method, lensPath });
   assertEquals(result, {
     data: { ...json, genres: json.genres.concat(body) },
+  });
+});
+
+Deno.test("methodDelete", () => {
+  let json = JSON.parse(jsonDbTest);
+  let jsonCopy = JSON.parse(JSON.stringify(json));
+  let method = "DELETE";
+  let lensPath = ["laptops", "123"];
+  let result = methodDelete({ json: jsonCopy, method, lensPath });
+  assertEquals(result, {
+    data: { ...json, laptops: json.laptops.slice(1) },
+  });
+
+  jsonCopy = JSON.parse(JSON.stringify(json));
+  lensPath = ["color", "dark"];
+  result = methodDelete({ json: jsonCopy, method, lensPath });
+  const { dark: _, ...colorResult } = json.color;
+  assertEquals(result, {
+    data: { ...json, color: colorResult },
   });
 });
 

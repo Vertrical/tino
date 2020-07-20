@@ -137,7 +137,7 @@ export const methodPatch = ({ ...props }) => {
   return { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
-const methodDelete = ({ ...props }) => {
+export const methodDelete = ({ ...props }) => {
   const { lensPath, json } = props;
   const path = restfulLensPath(lensPath, json);
   const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
