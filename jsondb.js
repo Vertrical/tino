@@ -138,7 +138,8 @@ export const methodPatch = ({ ...props }) => {
   const path = restfulLensPath(lensPath, json);
   const targetObj = U.path(path, json);
 
-  const canUpdate = U.isObject(targetObj) && U.isObject(body);
+  const canUpdate =
+    U.isObject(targetObj) && U.isObject(body) && !U.isEmpty(path);
   if (canUpdate) {
     return {
       data: U.setLens({
