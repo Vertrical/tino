@@ -49,12 +49,7 @@ export const isEmpty = (obj) => {
   return false;
 };
 
-export const isNil = (obj) => {
-  if (typeof obj === "undefined" || obj === null) {
-    return true;
-  }
-  return false;
-};
+export const isNil = (obj) => typeof obj === "undefined" || obj === null;
 
 export const ifElse = _curry((condition, onTrue, onFalse) =>
   (...args) =>
