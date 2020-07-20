@@ -1,6 +1,5 @@
 import { readJson, readFileStr, fileExists } from "./deps.js";
 import * as U from "./utils.js";
-import { getStatus } from "./json_server.js";
 import { HttpStatus } from "./http_server.js";
 
 export const readJsonDb = async (dbPathname = "./db.json") => {
@@ -81,8 +80,7 @@ export const methodPost = ({ ...props }) => {
   const path = restfulLensPath(lensPath, json);
   const targetObj = U.path(path, json);
 
-  const canCreate =
-    !U.isNil(body) &&
+  const canCreate = !U.isNil(body) &&
     !U.isNil(targetObj) &&
     (U.isArray(targetObj) || U.isObject(targetObj));
   if (canCreate) {
@@ -120,11 +118,32 @@ export const methodPut = ({ ...props }) => {
   return { ...props, status: 400 };
 };
 
+export const methodPatch = ({ ...props }) => {
+  const { lensPath, json, body } = props;
+  const path = restfulLensPath(lensPath, json);
+  const targetObj = U.path(path, json);
+
+  const canUpdate = U.isObject(targetObj) && U.isObject(body) &&
+    !U.isEmpty(path);
+  if (canUpdate) {
+    return {
+      data: U.setLens({
+        path,
+        content: { ...targetObj, ...body },
+        obj: json,
+      }),
+    };
+  }
+  return { ...props, status: HttpStatus.BAD_REQUEST };
+};
+
 const methodDelete = ({ ...props }) => {
   const { lensPath, json } = props;
-  const parentPath = [...lensPath];
-  const lastIdx = parentPath.pop();
-  const parentView = U.view(U.lensPath(parentPath))(json);
+  const path = restfulLensPath(lensPath, json);
+  const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
+  const parentView = U.path(parentPath, json);
+  const lastIdx = path.pop();
+
   if (U.isArray(parentView)) {
     if (lastIdx !== "" && !isNaN(lastIdx)) {
       parentView.splice(lastIdx, 1);
@@ -132,28 +151,15 @@ const methodDelete = ({ ...props }) => {
         data: U.setLens({ path: parentPath, content: parentView, obj: json }),
       };
     }
-  } else {
-    const view = U.view(U.lensPath(lensPath))(json);
-    if (U.isArray(view) && !U.isEmpty(props.query)) {
-      const withQueryApplied = view.filter(
-        (item) => U.isObject(item) && !U.containsAll(props.query, item),
-      );
+  } else if (U.isObject(parentView)) {
+    if (lastIdx !== "" && U.has(lastIdx, parentView)) {
+      const { [lastIdx]: _, ...rest } = parentView;
       return {
-        data: U.setLens({
-          path: lensPath,
-          content: withQueryApplied,
-          obj: json,
-        }),
+        data: U.setLens({ path: parentPath, content: rest, obj: json }),
       };
     }
-    return {
-      data: U.setLens({
-        path: lensPath,
-        content: withQueryApplied,
-        obj: json,
-      }),
-    };
   }
+  return { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
 const applyMethod = ({ data, ...props }) => {
@@ -190,11 +196,7 @@ const applyGetMethod = U.when(
   U.compose(tryProps, tryDirectLens, tryRestful),
 );
 
-export const handleJson = U.compose(
-  buildResponse,
-  applyMethod,
-  applyGetMethod,
-);
+export const handleJson = U.compose(buildResponse, applyMethod, applyGetMethod);
 
 const restfulLensPath = (lensPath, json) => {
   let finalPath = [];
@@ -224,21 +226,15 @@ export const buildResponseBody = (props) => {
   const { pathPattern, query } = props.ctx;
   if (U.isObject(props.json)) {
     const path = url.split("?")[0].replace(pathPattern, "");
-    if (U.isEmpty(path)) {
-      return {
-        resp: buildResponse({ data: props.json, status: 200 }),
-      };
-    } else {
-      const lensPath = path.split("/").filter((x) => x);
-      const payload = handleJson({
-        lensPath,
-        json: props.json,
-        query,
-        method,
-        ...props,
-      });
-      return { resp: { response: payload.response }, status: payload.status };
-    }
+    const lensPath = path.split("/").filter((x) => x);
+    const payload = handleJson({
+      lensPath,
+      json: props.json,
+      query,
+      method,
+      ...props,
+    });
+    return { resp: { response: payload.response }, status: payload.status };
   }
   return {
     resp: props.fileContent,
