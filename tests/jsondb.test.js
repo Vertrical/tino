@@ -27,7 +27,7 @@ const beforeAll = async () => {
     await Deno.copyFile(jsonDbTestPath, jsonDbTestCopyPath);
   } catch (e) {
     console.warn(
-      `There was an error copying the file ${jsonDbTestCopyPath}: ${e}`
+      `There was an error copying the file ${jsonDbTestCopyPath}: ${e}`,
     );
   }
 };
@@ -37,7 +37,7 @@ const afterAll = async () => {
     await Deno.remove(jsonDbTestCopyPath);
   } catch (e) {
     console.warn(
-      `There was an error deleting the file ${jsonDbTestCopyPath}: ${e}`
+      `There was an error deleting the file ${jsonDbTestCopyPath}: ${e}`,
     );
   }
 };
@@ -254,11 +254,11 @@ Deno.test("jsondb", async () => {
     false,
     processJsonOrContent,
     () => checkJsonDb(jsonDbTestPath),
-    jsonDbTestCopyPath
+    jsonDbTestCopyPath,
   )(ctx);
   const newContent = await U.tryCatch(
     async () => await readJson(jsonDbTestCopyPath),
-    () => ({})
+    () => ({}),
   );
 
   assertEquals(
@@ -268,7 +268,7 @@ Deno.test("jsondb", async () => {
 
   assertEquals(
     JSON.stringify(newContent),
-    JSON.stringify(result?.resp?.response)
+    JSON.stringify(result?.resp?.response),
   );
 });
 
