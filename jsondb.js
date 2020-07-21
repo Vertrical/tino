@@ -150,12 +150,13 @@ export const methodDelete = ({ ...props }) => {
     return {
       data: U.setLens({
         path: path,
-        content: view.filter((item) => U.isObject(item) && !U.containsAll(query, item)),
+        content: view.filter((item) =>
+          U.isObject(item) && !U.containsAll(query, item)
+        ),
         obj: json,
       }),
     };
-  }
-  else if (U.isArray(parentView)) {
+  } else if (U.isArray(parentView)) {
     if (lastIdx !== "" && !isNaN(lastIdx)) {
       parentView.splice(lastIdx, 1);
       return {
@@ -221,7 +222,7 @@ const retrievePath = (lensPath, json) => {
       current = current[pathItem];
       finalPath.push(pathItem);
     } else if (U.isArray(current)) {
-      const isByIndex = pathCopy.slice(0, 1).includes('byindex');
+      const isByIndex = pathCopy.slice(0, 1).includes("byindex");
 
       if (isByIndex) {
         const index = Number(pathItem);
