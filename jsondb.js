@@ -139,8 +139,8 @@ export const methodPatch = ({ ...props }) => {
 
 export const methodDelete = ({ ...props }) => {
   const { lensPath, json } = props;
-  const path = restfulLensPath(lensPath, json);
-  const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
+  const path = retrievePath(lensPath, json);
+  const parentPath = retrievePath(lensPath.slice(0, -1), json);
   const parentView = U.path(parentPath, json);
   const lastIdx = path.pop();
 
@@ -198,6 +198,39 @@ const applyGetMethod = U.when(
 );
 
 export const handleJson = U.compose(buildResponse, applyMethod, applyGetMethod);
+
+const retrievePath = (lensPath, json) => {
+  let restfulPath = restfulLensPath(lensPath, json);
+
+  return !U.isEmpty(restfulPath)
+    ? restfulPath
+    : indexLensPath(lensPath, json);
+};
+
+const indexLensPath = (lensPath, json) => {
+  let finalPath = [];
+
+  for (
+    let pathItem = null, pathCopy = [...lensPath], current = { ...json };
+    (pathItem = pathCopy.shift());
+  ) {
+    if (U.isObject(current)) {
+      current = current[pathItem];
+      finalPath.push(pathItem);
+    } else if (U.isArray(current)) {
+      const index = Number(pathItem);
+      const maybeItem = current[Number(pathItem)];
+      if (isNaN(index) || maybeItem == null) {
+        return [];
+      }
+      current = current;
+      finalPath.push(`${pathItem}`);
+    } else {
+      return [];
+    }
+  }
+  return finalPath;
+};
 
 const restfulLensPath = (lensPath, json) => {
   let finalPath = [];
