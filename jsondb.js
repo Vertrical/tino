@@ -137,11 +137,13 @@ export const methodPatch = ({ ...props }) => {
   return { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
-const methodDelete = ({ ...props }) => {
+export const methodDelete = ({ ...props }) => {
   const { lensPath, json } = props;
-  const parentPath = [...lensPath];
-  const lastIdx = parentPath.pop();
-  const parentView = U.view(U.lensPath(parentPath))(json);
+  const path = restfulLensPath(lensPath, json);
+  const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
+  const parentView = U.path(parentPath, json);
+  const lastIdx = path.pop();
+
   if (U.isArray(parentView)) {
     if (lastIdx !== "" && !isNaN(lastIdx)) {
       parentView.splice(lastIdx, 1);
@@ -149,28 +151,15 @@ const methodDelete = ({ ...props }) => {
         data: U.setLens({ path: parentPath, content: parentView, obj: json }),
       };
     }
-  } else {
-    const view = U.view(U.lensPath(lensPath))(json);
-    if (U.isArray(view) && !U.isEmpty(props.query)) {
-      const withQueryApplied = view.filter(
-        (item) => U.isObject(item) && !U.containsAll(props.query, item),
-      );
+  } else if (U.isObject(parentView)) {
+    if (lastIdx !== "" && U.has(lastIdx, parentView)) {
+      const { [lastIdx]: _, ...rest } = parentView;
       return {
-        data: U.setLens({
-          path: lensPath,
-          content: withQueryApplied,
-          obj: json,
-        }),
+        data: U.setLens({ path: parentPath, content: rest, obj: json }),
       };
     }
-    return {
-      data: U.setLens({
-        path: lensPath,
-        content: withQueryApplied,
-        obj: json,
-      }),
-    };
   }
+  return { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
 const applyMethod = ({ data, ...props }) => {
