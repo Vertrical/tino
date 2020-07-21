@@ -127,6 +127,17 @@ Deno.test("methodDelete", () => {
   });
 
   jsonCopy = JSON.parse(JSON.stringify(json));
+  lensPath = ["laptops"];
+  let query = { brand: "dell" };
+  result = methodDelete({ json: jsonCopy, method, lensPath, query });
+  assertEquals(result, {
+    data: {
+      ...json,
+      laptops: json.laptops.filter((laptop) => laptop.brand !== "dell")
+    },
+  });
+
+  jsonCopy = JSON.parse(JSON.stringify(json));
   lensPath = ["color", "dark"];
   result = methodDelete({ json: jsonCopy, method, lensPath });
   const { dark: _, ...colorResult } = json.color;
