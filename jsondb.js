@@ -140,9 +140,9 @@ export const methodPatch = ({ ...props }) => {
 export const methodDelete = ({ ...props }) => {
   const { lensPath, json } = props;
   const path = retrievePath(lensPath, json);
-  const parentPath = retrievePath(lensPath.slice(0, -1), json);
+  const parentPath = path.slice(0, -1);
   const parentView = U.path(parentPath, json);
-  const lastIdx = path.pop();
+  const lastIdx = path.slice(-1);
 
   if (U.isArray(parentView)) {
     if (lastIdx !== "" && !isNaN(lastIdx)) {
@@ -200,14 +200,6 @@ const applyGetMethod = U.when(
 export const handleJson = U.compose(buildResponse, applyMethod, applyGetMethod);
 
 const retrievePath = (lensPath, json) => {
-  let restfulPath = restfulLensPath(lensPath, json);
-
-  return !U.isEmpty(restfulPath)
-    ? restfulPath
-    : indexLensPath(lensPath, json);
-};
-
-const indexLensPath = (lensPath, json) => {
   let finalPath = [];
 
   for (
@@ -218,17 +210,30 @@ const indexLensPath = (lensPath, json) => {
       current = current[pathItem];
       finalPath.push(pathItem);
     } else if (U.isArray(current)) {
-      const index = Number(pathItem);
-      const maybeItem = current[Number(pathItem)];
-      if (isNaN(index) || maybeItem == null) {
-        return [];
+      const isByIndex = pathCopy.slice(0, 1).includes('byindex');
+
+      if (isByIndex) {
+        const index = Number(pathItem);
+        const maybeItem = current[index];
+        pathCopy = pathCopy.slice(1);
+        if (isNaN(index) || maybeItem == null) {
+          return [];
+        }
+        current = maybeItem;
+        finalPath.push(`${pathItem}`);
+      } else {
+        const itemIndex = current.findIndex((item) => item.id == pathItem);
+        if (itemIndex < 0) {
+          return [];
+        }
+        current = current[itemIndex];
+        finalPath.push(`${itemIndex}`);
       }
-      current = current;
-      finalPath.push(`${pathItem}`);
     } else {
       return [];
     }
   }
+
   return finalPath;
 };
 
