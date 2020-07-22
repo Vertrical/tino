@@ -115,7 +115,7 @@ export const methodPut = ({ ...props }) => {
       }),
     };
   }
-  return { ...props, status: 400 };
+  return { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
 export const methodPatch = ({ ...props }) => {
