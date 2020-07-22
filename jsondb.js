@@ -116,7 +116,7 @@ export const methodPut = ({ ...props }) => {
       }),
     };
   }
-  return { ...props, status: 400 };
+  return { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
 export const methodPatch = ({ ...props }) => {
@@ -172,7 +172,7 @@ export const methodDelete = ({ ...props }) => {
       };
     }
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+  return { ...props, status: HttpStatus.NOT_FOUND };
 };
 
 const applyMethod = ({ data, ...props }) => {
