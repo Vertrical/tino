@@ -36,7 +36,7 @@ export const tryRestful = ({
   ...props
 }) => {
   if (!U.isNil(data) && !next) {
-    return { data, json, lensPath, ...props };
+    return { data, responseData: data, json, lensPath, ...props };
   }
   const [singlePathItem, ...restPathItems] = props.restPathItems || lensPath;
   const dataPayload = data || json;
@@ -56,12 +56,14 @@ export const tryRestful = ({
       ...props,
     });
   } else {
-    return { data: maybeNextItem || undefined, json, lensPath, ...props };
+    const data = maybeNextItem || undefined;
+    return { data, responseData: data, json, lensPath, ...props };
   }
 };
 
 export const tryDirectLens = ({ lensPath, json, data, ...props }) => {
-  return { lensPath, data: data || U.path(lensPath, json), json, ...props };
+  data = data || U.path(lensPath, json);
+  return { lensPath, data, responseData: data, json, ...props };
 };
 
 export const tryProps = ({ data, ...props }) => {
@@ -70,7 +72,7 @@ export const tryProps = ({ data, ...props }) => {
     const res = data.filter(
       (item) => U.isObject(item) && U.containsAll(props.query, item),
     );
-    return { data: res, method, lensPath, json };
+    return { data: res, responseData: res, method, lensPath, json };
   }
   return { data, method, lensPath, json };
 };
@@ -82,7 +84,8 @@ export const methodPost = ({ ...props }) => {
 
   const canCreate = !U.isNil(body) &&
     !U.isNil(targetObj) &&
-    (U.isArray(targetObj) || U.isObject(targetObj));
+    (U.isArray(targetObj) || U.isObject(targetObj)) &&
+    !U.isEmpty(path);
   if (canCreate) {
     return {
       data: U.setLens({
@@ -92,6 +95,8 @@ export const methodPost = ({ ...props }) => {
           : { ...targetObj, ...body },
         obj: json,
       }),
+      responseData: body,
+      status: HttpStatus.OK,
     };
   }
   return { ...props, status: HttpStatus.BAD_REQUEST };
@@ -102,20 +107,27 @@ export const methodPut = ({ ...props }) => {
   const path = restfulLensPath(lensPath, json);
   const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
   const parentObj = U.path(parentPath, json);
-  const targetObj = U.path(path, json);
+  const targetObj = !U.isEmpty(path) ? U.path(path, json) : null;
 
-  const canUpdateOrCreate = U.isObject(targetObj) ||
-    (U.isNil(targetObj) && (U.isArray(parentObj) || U.isObject(parentObj)));
-  if (canUpdateOrCreate) {
+  const canUpdate = U.isObject(targetObj);
+  const canCreate = U.isNil(targetObj) && (U.isArray(parentObj) || U.isObject(parentObj));
+  const data = canCreate || canUpdate
+    ? { data: U.setLens({ path, content: body, obj: json }) }
+    : null;
+
+  if (canUpdate) {
     return {
-      data: U.setLens({
-        path,
-        content: body,
-        obj: json,
-      }),
+      data,
+      status: HttpStatus.OK,
+    };
+  } else if (canCreate) {
+    return {
+      data,
+      responseData: body,
+      status: HttpStatus.CREATED,
     };
   }
-  return { ...props, status: 400 };
+  return { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
 export const methodPatch = ({ ...props }) => {
@@ -132,6 +144,7 @@ export const methodPatch = ({ ...props }) => {
         content: { ...targetObj, ...body },
         obj: json,
       }),
+      status: HttpStatus.OK,
     };
   }
   return { ...props, status: HttpStatus.BAD_REQUEST };
@@ -155,12 +168,14 @@ export const methodDelete = ({ ...props }) => {
         ),
         obj: json,
       }),
+      status: HttpStatus.OK,
     };
   } else if (U.isArray(parentView)) {
     if (lastIdx !== "" && !isNaN(lastIdx)) {
       parentView.splice(lastIdx, 1);
       return {
         data: U.setLens({ path: parentPath, content: parentView, obj: json }),
+        status: HttpStatus.OK,
       };
     }
   } else if (U.isObject(parentView)) {
@@ -168,6 +183,7 @@ export const methodDelete = ({ ...props }) => {
       const { [lastIdx]: _, ...rest } = parentView;
       return {
         data: U.setLens({ path: parentPath, content: rest, obj: json }),
+        status: HttpStatus.OK,
       };
     }
   }
@@ -193,13 +209,13 @@ const applyMethod = ({ data, ...props }) => {
   });
 };
 
-export const buildResponse = ({ data, status }) => {
+export const buildResponse = ({ data, status, responseData }) => {
   if (U.isArray(data)) {
-    return { response: [...data], status };
+    return { response: [...data], status, responseData };
   } else if (U.isObject(data)) {
-    return { response: { ...data }, status };
+    return { response: { ...data }, status, responseData };
   }
-  return { response: data, status };
+  return { response: data, status, responseData };
 };
 
 const isMethod = (method) => (props) => props.method === method;
@@ -285,7 +301,11 @@ export const buildResponseBody = (props) => {
       method,
       ...props,
     });
-    return { resp: { response: payload.response }, status: payload.status };
+    return {
+      resp: { response: payload.response },
+      responseData: payload.responseData,
+      status: payload.status,
+    };
   }
   return {
     resp: props.fileContent,
@@ -322,7 +342,12 @@ export const jsondb = (
           JSON.stringify(result, null, 2),
         );
       }
-      return { ...res };
+      return {
+        ...res,
+        ...(!U.isNil(res.responseData) ? {
+          resp: { response: res.responseData },
+        } : { resp: {} }),
+      };
     }
     return { status: 404 };
   };
