@@ -159,7 +159,7 @@ export const methodDelete = ({ ...props }) => {
       };
     }
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+  return { ...props, status: HttpStatus.NOT_FOUND };
 };
 
 const applyMethod = ({ data, ...props }) => {
