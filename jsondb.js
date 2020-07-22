@@ -138,13 +138,25 @@ export const methodPatch = ({ ...props }) => {
 };
 
 export const methodDelete = ({ ...props }) => {
-  const { lensPath, json } = props;
-  const path = restfulLensPath(lensPath, json);
-  const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
+  const { lensPath, json, query } = props;
+  const path = retrievePath(lensPath, json, query);
+  const parentPath = path.slice(0, -1);
+  const view = U.path(path, json);
   const parentView = U.path(parentPath, json);
-  const lastIdx = path.pop();
+  const lastIdx = path.slice(-1);
+  const hasQuery = !U.isEmpty(query);
 
-  if (U.isArray(parentView)) {
+  if (hasQuery && U.isArray(view)) {
+    return {
+      data: U.setLens({
+        path: path,
+        content: view.filter((item) =>
+          U.isObject(item) && !U.containsAll(query, item)
+        ),
+        obj: json,
+      }),
+    };
+  } else if (U.isArray(parentView)) {
     if (lastIdx !== "" && !isNaN(lastIdx)) {
       parentView.splice(lastIdx, 1);
       return {
@@ -198,6 +210,44 @@ const applyGetMethod = U.when(
 );
 
 export const handleJson = U.compose(buildResponse, applyMethod, applyGetMethod);
+
+const retrievePath = (lensPath, json) => {
+  let finalPath = [];
+
+  for (
+    let pathItem = null, pathCopy = [...lensPath], current = { ...json };
+    (pathItem = pathCopy.shift());
+  ) {
+    if (U.isObject(current)) {
+      current = current[pathItem];
+      finalPath.push(pathItem);
+    } else if (U.isArray(current)) {
+      const isByIndex = pathCopy.slice(0, 1).includes("byindex");
+
+      if (isByIndex) {
+        const index = Number(pathItem);
+        const maybeItem = current[index];
+        pathCopy = pathCopy.slice(1);
+        if (isNaN(index) || maybeItem == null) {
+          return [];
+        }
+        current = maybeItem;
+        finalPath.push(`${pathItem}`);
+      } else {
+        const itemIndex = current.findIndex((item) => item.id == pathItem);
+        if (itemIndex < 0) {
+          return [];
+        }
+        current = current[itemIndex];
+        finalPath.push(`${itemIndex}`);
+      }
+    } else {
+      return [];
+    }
+  }
+
+  return finalPath;
+};
 
 const restfulLensPath = (lensPath, json) => {
   let finalPath = [];
