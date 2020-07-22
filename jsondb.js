@@ -82,11 +82,12 @@ export const methodPost = ({ ...props }) => {
 
   const canCreate = !U.isNil(body) &&
     !U.isNil(targetObj) &&
-    (U.isArray(targetObj) || U.isObject(targetObj));
+    (U.isArray(targetObj) || U.isObject(targetObj)) &&
+    !U.isEmpty(path);
   if (canCreate) {
     return {
       data: U.setLens({
-        path: path,
+        path,
         content: U.isArray(targetObj)
           ? targetObj.concat(body)
           : { ...targetObj, ...body },
