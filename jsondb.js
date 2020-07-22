@@ -110,7 +110,8 @@ export const methodPut = ({ ...props }) => {
   const targetObj = !U.isEmpty(path) ? U.path(path, json) : null;
 
   const canUpdate = U.isObject(targetObj);
-  const canCreate = U.isNil(targetObj) && (U.isArray(parentObj) || U.isObject(parentObj));
+  const canCreate = U.isNil(targetObj) &&
+    (U.isArray(parentObj) || U.isObject(parentObj));
   const data = canCreate || canUpdate
     ? { data: U.setLens({ path, content: body, obj: json }) }
     : null;
@@ -344,9 +345,11 @@ export const jsondb = (
       }
       return {
         ...res,
-        ...(!U.isNil(res.responseData) ? {
-          resp: { response: res.responseData },
-        } : { resp: {} }),
+        ...(!U.isNil(res.responseData)
+          ? {
+            resp: { response: res.responseData },
+          }
+          : { resp: {} }),
       };
     }
     return { status: 404 };

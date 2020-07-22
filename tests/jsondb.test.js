@@ -133,7 +133,7 @@ Deno.test("methodDelete", () => {
   assertEquals(result, {
     data: {
       ...json,
-      laptops: json.laptops.filter((laptop) => laptop.brand !== "dell")
+      laptops: json.laptops.filter((laptop) => laptop.brand !== "dell"),
     },
   });
 
