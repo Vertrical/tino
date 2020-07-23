@@ -74,7 +74,7 @@ export const tryProps = ({ data, ...props }) => {
     );
     return { data: res, responseData: res, method, lensPath, json };
   }
-  return { data, method, lensPath, json };
+  return { data, method, responseData: data, lensPath, json };
 };
 
 export const methodPost = ({ ...props }) => {
@@ -119,9 +119,7 @@ export const methodPut = ({ ...props }) => {
       canCreate || canUpdate
         ? U.setLens(
           {
-            path: U.isEmpty(path)
-              ? parentPath
-              : path,
+            path: U.isEmpty(path) ? parentPath : path,
             content: U.isEmpty(path) ? parentObj.concat(body) : body,
             obj: json,
           },
@@ -131,9 +129,7 @@ export const methodPut = ({ ...props }) => {
       canCreate || canUpdate
         ? U.setLens(
           {
-            path: U.isEmpty(path)
-              ? parentPath
-              : path,
+            path: U.isEmpty(path) ? parentPath : path,
             content: U.isEmpty(path) ? { ...parentObj, ...body } : body,
             obj: json,
           },
@@ -216,7 +212,7 @@ export const methodDelete = ({ ...props }) => {
   return { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
-const applyMethod = ({ data, ...props }) => {
+const applyMethod = ({ data, responseData, ...props }) => {
   const { method, lensPath, json, query, ctx } = props;
   const getMethodHandler = U.cond([
     { when: U.eq("POST"), use: methodPost },
@@ -227,6 +223,7 @@ const applyMethod = ({ data, ...props }) => {
   const methodHandler = getMethodHandler(method);
   return methodHandler({
     data,
+    responseData,
     method,
     lensPath,
     json,
