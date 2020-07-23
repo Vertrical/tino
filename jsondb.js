@@ -112,9 +112,34 @@ export const methodPut = ({ ...props }) => {
   const canUpdate = U.isObject(targetObj);
   const canCreate = U.isNil(targetObj) &&
     (U.isArray(parentObj) || U.isObject(parentObj));
-  const data = canCreate || canUpdate
-    ? { data: U.setLens({ path, content: body, obj: json }) }
-    : null;
+  const isParentArray = U.isArray(parentObj);
+  let data = U.ifElse(
+    () => isParentArray,
+    () =>
+      canCreate || canUpdate
+        ? U.setLens(
+          {
+            path: U.isEmpty(path)
+              ? parentPath
+              : path,
+            content: U.isEmpty(path) ? parentObj.concat(body) : body,
+            obj: json,
+          },
+        )
+        : null,
+    () =>
+      canCreate || canUpdate
+        ? U.setLens(
+          {
+            path: U.isEmpty(path)
+              ? parentPath
+              : path,
+            content: U.isEmpty(path) ? { ...parentObj, ...body } : body,
+            obj: json,
+          },
+        )
+        : null,
+  )();
 
   if (canUpdate) {
     return {
