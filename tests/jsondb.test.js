@@ -104,15 +104,17 @@ Deno.test("methodPost", () => {
   let method = "POST";
   let lensPath = ["laptops"];
   let result = methodPost({ body, json, method, lensPath });
-  assertEquals(result, {
-    data: { ...json, laptops: [...json.laptops, body] },
+  assertEquals(result.data, {
+    ...json,
+    laptops: [...json.laptops, body],
   });
 
   body = ["horror", "sci-fi"];
   lensPath = ["genres"];
   result = methodPost({ body, json, method, lensPath });
-  assertEquals(result, {
-    data: { ...json, genres: json.genres.concat(body) },
+  assertEquals(result.data, {
+    ...json,
+    genres: json.genres.concat(body),
   });
 });
 
@@ -122,27 +124,27 @@ Deno.test("methodDelete", () => {
   let method = "DELETE";
   let lensPath = ["laptops", "123"];
   let result = methodDelete({ json: jsonCopy, method, lensPath });
-  assertEquals(result, {
-    data: { ...json, laptops: json.laptops.slice(1) },
+  assertEquals(result.data, {
+    ...json,
+    laptops: json.laptops.slice(1),
   });
 
   jsonCopy = JSON.parse(JSON.stringify(json));
   lensPath = ["laptops"];
   let query = { brand: "dell" };
   result = methodDelete({ json: jsonCopy, method, lensPath, query });
-  assertEquals(result, {
-    data: {
-      ...json,
-      laptops: json.laptops.filter((laptop) => laptop.brand !== "dell"),
-    },
+  assertEquals(result.data, {
+    ...json,
+    laptops: json.laptops.filter((laptop) => laptop.brand !== "dell"),
   });
 
   jsonCopy = JSON.parse(JSON.stringify(json));
   lensPath = ["color", "dark"];
   result = methodDelete({ json: jsonCopy, method, lensPath });
   const { dark: _, ...colorResult } = json.color;
-  assertEquals(result, {
-    data: { ...json, color: colorResult },
+  assertEquals(result.data, {
+    ...json,
+    color: colorResult,
   });
 });
 
@@ -153,23 +155,19 @@ Deno.test("methodPatch", () => {
   let method = "PATCH";
   let lensPath = ["laptops", target.id.toString()];
   let result = methodPatch({ body, json, method, lensPath });
-  assertEquals(result, {
-    data: {
-      ...json,
-      laptops: json.laptops.map((obj) =>
-        obj.id == target.id ? { ...obj, ...body } : obj
-      ),
-    },
+  assertEquals(result.data, {
+    ...json,
+    laptops: json.laptops.map((obj) =>
+      obj.id == target.id ? { ...obj, ...body } : obj
+    ),
   });
 
   body = { sunny: "yellow" };
   lensPath = ["color"];
   result = methodPatch({ body, json, method, lensPath });
-  assertEquals(result, {
-    data: {
-      ...json,
-      color: { ...json.color, ...body },
-    },
+  assertEquals(result.data, {
+    ...json,
+    color: { ...json.color, ...body },
   });
 });
 
@@ -196,15 +194,15 @@ Deno.test("handleJson", () => {
   let json = JSON.parse(jsonDbTest);
   let result = handleJson({ method, lensPath, json });
   assertEquals(
-    JSON.stringify({ response: json.genres[0] }),
-    JSON.stringify(result),
+    JSON.stringify(json.genres[0]),
+    JSON.stringify(result.response),
   );
 
   lensPath = ["laptops", "123"];
   result = handleJson({ method, lensPath, json });
   assertEquals(
-    JSON.stringify({ response: json.laptops[0] }),
-    JSON.stringify(result),
+    JSON.stringify(json.laptops[0]),
+    JSON.stringify(result.response),
   );
 });
 
@@ -293,13 +291,13 @@ Deno.test("jsondb", async () => {
   );
 
   assertEquals(
-    JSON.stringify(parsedJson.laptops.concat(body)),
-    JSON.stringify(result?.resp?.response?.laptops),
+    JSON.stringify(body),
+    JSON.stringify(result?.resp?.response),
   );
 
   assertEquals(
     JSON.stringify(newContent),
-    JSON.stringify(result?.resp?.response),
+    JSON.stringify({ ...parsedJson, laptops: [...parsedJson.laptops, body] }),
   );
 });
 
