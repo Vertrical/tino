@@ -108,6 +108,7 @@ export const methodPut = ({ ...props }) => {
   const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
   const parentObj = U.path(parentPath, json);
   const targetObj = !U.isEmpty(path) ? U.path(path, json) : null;
+  const objectId = lensPath[lensPath.length - 1];
 
   const canUpdate = U.isObject(targetObj);
   const canCreate = U.isNil(targetObj) &&
@@ -120,7 +121,9 @@ export const methodPut = ({ ...props }) => {
         ? U.setLens(
           {
             path: U.isEmpty(path) ? parentPath : path,
-            content: U.isEmpty(path) ? parentObj.concat(body) : body,
+            content: U.isEmpty(path)
+              ? parentObj.concat({ id: objectId, ...body })
+              : { id: targetObj.id, ...body },
             obj: json,
           },
         )
