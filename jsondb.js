@@ -79,14 +79,19 @@ export const tryProps = ({ data, ...props }) => {
 
 export const methodPost = ({ ...props }) => {
   const { lensPath, json, body } = props;
-  const path = restfulLensPath(lensPath, json);
+  const path = retrievePath(lensPath, json);
   const targetObj = U.path(path, json);
 
   const canCreate = !U.isNil(body) &&
     !U.isNil(targetObj) &&
     (U.isArray(targetObj) || U.isObject(targetObj)) &&
     !(U.isEmpty(path) && !U.isEmpty(lensPath));
-  if (canCreate) {
+  if (!U.isArray(targetObj) && !U.isEmpty(lensPath)) {
+    return {
+      ...props,
+      status: HttpStatus.UNPROCESSABLE_ENTITY,
+    };
+  } else if (canCreate) {
     return {
       data: U.setLens({
         path: path,
@@ -161,7 +166,7 @@ export const methodPatch = ({ ...props }) => {
   const targetObj = U.path(path, json);
 
   const canUpdate = U.isObject(targetObj) && U.isObject(body) &&
-    !U.isEmpty(path);
+    !(U.isEmpty(path) && !U.isEmpty(lensPath));
   if (canUpdate) {
     return {
       data: U.setLens({
@@ -307,6 +312,8 @@ const restfulLensPath = (lensPath, json) => {
       }
       current = current[itemIndex];
       finalPath.push(`${itemIndex}`);
+    } else if (U.isString(current)) {
+      return finalPath;
     } else {
       return [];
     }
