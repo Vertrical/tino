@@ -94,7 +94,7 @@ export const methodPost = ({ ...props }) => {
   } else if (canCreate) {
     return {
       data: U.setLens({
-        path: path,
+        path,
         content: U.isArray(targetObj)
           ? targetObj.concat(body)
           : { ...targetObj, ...body },
@@ -217,7 +217,7 @@ export const methodDelete = ({ ...props }) => {
       };
     }
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+  return { ...props, status: HttpStatus.NOT_FOUND };
 };
 
 const applyMethod = ({ data, responseData, ...props }) => {
