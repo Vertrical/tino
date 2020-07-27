@@ -113,7 +113,7 @@ export const methodPut = ({ ...props }) => {
   const { lensPath, json, body } = props;
   const path = restfulLensPath(lensPath, json);
   const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
-  const parentObj = U.path(parentPath, json);
+  const parentObj = !U.isEmpty(path) ? U.path(parentPath, json) : null;
   const targetObj = !U.isEmpty(path) ? U.path(path, json) : null;
   const objectId = lensPath[lensPath.length - 1];
 
@@ -369,7 +369,9 @@ export const jsondb = (
         fileContent: file.fileContent,
         ctx,
       });
-      if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
+      const response = U.path(["resp", "response"], res);
+      const status = U.path(["status"], res);
+      if (file.json && (U.isEmpty(response) || U.isNil(response)) && U.isNil(status)) {
         return U.setTo(res, { status: 404 });
       }
       const result = res.resp.response;

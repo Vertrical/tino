@@ -142,7 +142,7 @@ Deno.test("GET /api/laptops/9090909", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     HttpStatus.NOT_FOUND,
-    result?.resp?.status,
+    result.status,
   );
 });
 
@@ -229,7 +229,7 @@ Deno.test("GET /api/color/absbdbd", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     HttpStatus.NOT_FOUND,
-    result?.resp?.status,
+    result.status,
   );
 });
 
