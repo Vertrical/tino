@@ -16,12 +16,12 @@ import jsondb, {
   methodDelete,
   methodPatch,
 } from "../jsondb.js";
-import { readFileStr, readJson } from "../deps.js";
+import { readJson } from "../deps.js";
 import * as U from "../utils.js";
 
 const jsonDbTestPath = "tests/jsondb.test.json";
 const jsonDbTestCopyPath = "tests/jsondb_copy.test.json";
-const jsonDbTest = await readFileStr(jsonDbTestPath);
+const jsonDbTest = await Deno.readTextFile(jsonDbTestPath);
 
 const beforeAll = async () => {
   try {

@@ -3,12 +3,11 @@ import jsondb, {
   checkJsonDb,
   processJsonOrContent,
 } from "../jsondb.js";
-import { readFileStr } from "../deps.js";
 import { HttpStatus } from "../http_server.js";
 
 const jsonDbTestPath = "tests/jsondb.test.json";
 const jsonDbTestCopyPath = "tests/jsondb_copy.test.json";
-const jsonDbTest = await readFileStr(jsonDbTestPath);
+const jsonDbTest = await Deno.readTextFile(jsonDbTestPath);
 const parsedJson = JSON.parse(jsonDbTest);
 const pathPattern = "/api";
 

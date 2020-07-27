@@ -1,9 +1,9 @@
-import { readJson, readFileStr, fileExists } from "./deps.js";
+import { readJson, fileExists } from "./deps.js";
 import * as U from "./utils.js";
 import { HttpStatus } from "./http_server.js";
 
 export const readJsonDb = async (dbPathname = "./db.json") => {
-  const content = await readFileStr(dbPathname);
+  const content = await Deno.readTextFile(dbPathname);
   if (U.isEmpty(content)) {
     console.warn("warn: ", "Content is empty");
     return { json: {} };
