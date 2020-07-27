@@ -219,7 +219,9 @@ export const methodDelete = ({ ...props }) => {
       };
     }
   }
-  return { ...props, status: HttpStatus.NOT_FOUND };
+  return U.isEmpty(path) && !U.isEmpty(lensPath)
+    ? { ...props, status: HttpStatus.NOT_FOUND }
+    : { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
 const applyMethod = ({ data, responseData, ...props }) => {
