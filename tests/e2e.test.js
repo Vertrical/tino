@@ -78,10 +78,10 @@ Deno.test("GET /api/genres", async () => {
   );
 });
 
-Deno.test("GET /api/genres/0", async () => {
+Deno.test("GET /api/genres/0/byindex", async () => {
   const ctx = {
     req: {
-      url: "/api/genres/0",
+      url: "/api/genres/0/byindex",
       method: "GET",
     },
     pathPattern,
@@ -146,10 +146,10 @@ Deno.test("GET /api/laptops/9090909", async () => {
   );
 });
 
-Deno.test("GET /api/laptops/0", async () => {
+Deno.test("GET /api/laptops/0/byindex", async () => {
   const ctx = {
     req: {
-      url: "/api/laptops/0",
+      url: "/api/laptops/0/byindex",
       method: "GET",
     },
     pathPattern,
