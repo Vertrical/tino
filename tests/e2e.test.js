@@ -35,12 +35,13 @@ const afterAll = async () => {
 const createJsonDb = async ({
   ctx,
   dryRun = true,
-  jsonDbPath = jsonDbTestPath
-}) => jsondb(
-  dryRun,
-  processJsonOrContent,
-  () => checkJsonDb(jsonDbPath),
-)(ctx);
+  jsonDbPath = jsonDbTestPath,
+}) =>
+  jsondb(
+    dryRun,
+    processJsonOrContent,
+    () => checkJsonDb(jsonDbPath),
+  )(ctx);
 
 Deno.test("beforeAll e2e", beforeAll);
 
@@ -57,7 +58,7 @@ Deno.test("GET /api", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     parsedJson,
-    result?.resp?.response
+    result?.resp?.response,
   );
 });
 
@@ -74,7 +75,7 @@ Deno.test("GET /api/genres", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     parsedJson.genres,
-    result?.resp?.response
+    result?.resp?.response,
   );
 });
 
@@ -91,7 +92,7 @@ Deno.test("GET /api/genres/0/byindex", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     parsedJson.genres[0],
-    result?.resp?.response
+    result?.resp?.response,
   );
 });
 
@@ -108,7 +109,7 @@ Deno.test("GET /api/laptops", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     parsedJson.laptops,
-    result?.resp?.response
+    result?.resp?.response,
   );
 });
 
@@ -125,7 +126,7 @@ Deno.test("GET /api/laptops/123", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     parsedJson.laptops[0],
-    result?.resp?.response
+    result?.resp?.response,
   );
 });
 
@@ -159,7 +160,7 @@ Deno.test("GET /api/laptops/0/byindex", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     parsedJson.laptops[0],
-    result?.resp?.response
+    result?.resp?.response,
   );
 });
 
@@ -171,14 +172,14 @@ Deno.test("GET /api/laptops?brand=lenovo", async () => {
     },
     pathPattern,
     query: {
-      brand: "lenovo"
+      brand: "lenovo",
     },
   };
 
   const result = await createJsonDb({ ctx });
   assertEquals(
     [parsedJson.laptops[1]],
-    result?.resp?.response
+    result?.resp?.response,
   );
 });
 
@@ -195,7 +196,7 @@ Deno.test("GET /api/color", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     parsedJson.color,
-    result?.resp?.response
+    result?.resp?.response,
   );
 });
 
@@ -212,7 +213,7 @@ Deno.test("GET /api/color/dark", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     parsedJson.color.dark,
-    result?.resp?.response
+    result?.resp?.response,
   );
 });
 
@@ -234,7 +235,7 @@ Deno.test("GET /api/color/absbdbd", async () => {
 });
 
 Deno.test("POST /api", async () => {
-  const body = { name: "value" }; 
+  const body = { name: "value" };
   const ctx = {
     req: {
       url: "/api",
@@ -248,7 +249,7 @@ Deno.test("POST /api", async () => {
   const result = await createJsonDb({ ctx });
   assertEquals(
     body,
-    result?.resp?.response
+    result?.resp?.response,
   );
 });
 
@@ -360,7 +361,67 @@ Deno.test("PUT /api/genres", async () => {
   };
 
   const result = await createJsonDb({ ctx });
-  console.log(result);
+  assertEquals(
+    body,
+    result?.resp?.response,
+  );
+});
+
+Deno.test("PUT /api/genres/0/byindex", async () => {
+  const body = { name: "value" };
+  const ctx = {
+    req: {
+      url: "/api/genres/0/byindex",
+      method: "PUT",
+    },
+    pathPattern,
+    body,
+    query: {},
+  };
+
+  const result = await createJsonDb({ ctx });
+  assertEquals(
+    body,
+    result?.resp?.response,
+  );
+});
+
+Deno.test("PUT /api/laptops", async () => {
+  const body = { id: 3223, brand: "acer" };
+  const ctx = {
+    req: {
+      url: "/api/laptops",
+      method: "PUT",
+    },
+    pathPattern,
+    body,
+    query: {},
+  };
+
+  const result = await createJsonDb({ ctx });
+  assertEquals(
+    body,
+    result?.resp?.response,
+  );
+});
+
+Deno.test("PUT /api/laptops/123", async () => {
+  const body = { id: 3223, brand: "acer" };
+  const ctx = {
+    req: {
+      url: "/api/laptops/123",
+      method: "PUT",
+    },
+    pathPattern,
+    body,
+    query: {},
+  };
+
+  const result = await createJsonDb({ ctx });
+  assertEquals(
+    HttpStatus.OK,
+    result.status,
+  );
 });
 
 Deno.test("PATCH /api", async () => {

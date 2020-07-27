@@ -35,7 +35,7 @@ export const tryRestful = ({
   next = false,
   ...props
 }) => {
-  if (!U.isNil(data) && !next || lensPath.includes('byindex')) {
+  if (!U.isNil(data) && !next || lensPath.includes("byindex")) {
     return { data, responseData: data, json, lensPath, ...props };
   }
   const [singlePathItem, ...restPathItems] = props.restPathItems || lensPath;
@@ -62,7 +62,7 @@ export const tryRestful = ({
 };
 
 export const tryDirectLens = ({ lensPath, json, data, ...props }) => {
-  data = data || lensPath.includes('byindex')
+  data = data || lensPath.includes("byindex")
     ? U.path(retrievePath(lensPath, json), json)
     : U.path(lensPath, json);
   return { lensPath, data, responseData: data, json, ...props };
@@ -111,15 +111,16 @@ export const methodPost = ({ ...props }) => {
 
 export const methodPut = ({ ...props }) => {
   const { lensPath, json, body } = props;
-  const path = restfulLensPath(lensPath, json);
-  const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
+  const path = retrievePath(lensPath, json);
+  const parentPath = retrievePath(lensPath.slice(0, -1), json);
   const parentObj = !U.isEmpty(path) ? U.path(parentPath, json) : null;
   const targetObj = !U.isEmpty(path) ? U.path(path, json) : null;
   const objectId = lensPath[lensPath.length - 1];
 
   const canUpdate = U.isObject(targetObj);
-  const canCreate = U.isNil(targetObj) &&
-    (U.isArray(parentObj) || U.isObject(parentObj));
+  const canCreate = !U.isObject(targetObj) &&
+      (U.isArray(parentObj) || U.isObject(parentObj)) ||
+    U.isEmpty(lensPath);
   const isParentArray = U.isArray(parentObj);
   let data = U.ifElse(
     () => isParentArray,
@@ -371,7 +372,10 @@ export const jsondb = (
       });
       const response = U.path(["resp", "response"], res);
       const status = U.path(["status"], res);
-      if (file.json && (U.isEmpty(response) || U.isNil(response)) && U.isNil(status)) {
+      if (
+        file.json && (U.isEmpty(response) || U.isNil(response)) &&
+        U.isNil(status)
+      ) {
         return U.setTo(res, { status: 404 });
       }
       const result = res.resp.response;
