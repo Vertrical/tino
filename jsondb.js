@@ -1,9 +1,9 @@
-import { readJson, readFileStr, fileExists } from "./deps.js";
+import { readJson, fileExists } from "./deps.js";
 import * as U from "./utils.js";
 import { HttpStatus } from "./http_server.js";
 
 export const readJsonDb = async (dbPathname = "./db.json") => {
-  const content = await readFileStr(dbPathname);
+  const content = await Deno.readTextFile(dbPathname);
   if (U.isEmpty(content)) {
     console.warn("warn: ", "Content is empty");
     return { json: {} };
@@ -35,7 +35,7 @@ export const tryRestful = ({
   next = false,
   ...props
 }) => {
-  if (!U.isNil(data) && !next) {
+  if (!U.isNil(data) && !next || lensPath.includes("byindex")) {
     return { data, responseData: data, json, lensPath, ...props };
   }
   const [singlePathItem, ...restPathItems] = props.restPathItems || lensPath;
@@ -62,7 +62,9 @@ export const tryRestful = ({
 };
 
 export const tryDirectLens = ({ lensPath, json, data, ...props }) => {
-  data = data || U.path(lensPath, json);
+  data = data || lensPath.includes("byindex")
+    ? U.path(retrievePath(lensPath, json), json)
+    : U.path(lensPath, json);
   return { lensPath, data, responseData: data, json, ...props };
 };
 
@@ -79,14 +81,19 @@ export const tryProps = ({ data, ...props }) => {
 
 export const methodPost = ({ ...props }) => {
   const { lensPath, json, body } = props;
-  const path = restfulLensPath(lensPath, json);
+  const path = retrievePath(lensPath, json);
   const targetObj = U.path(path, json);
 
   const canCreate = !U.isNil(body) &&
     !U.isNil(targetObj) &&
     (U.isArray(targetObj) || U.isObject(targetObj)) &&
-    !U.isEmpty(path);
-  if (canCreate) {
+    !(U.isEmpty(path) && !U.isEmpty(lensPath));
+  if (!U.isArray(targetObj) && !U.isEmpty(lensPath)) {
+    return {
+      ...props,
+      status: HttpStatus.UNPROCESSABLE_ENTITY,
+    };
+  } else if (canCreate) {
     return {
       data: U.setLens({
         path,
@@ -104,15 +111,16 @@ export const methodPost = ({ ...props }) => {
 
 export const methodPut = ({ ...props }) => {
   const { lensPath, json, body } = props;
-  const path = restfulLensPath(lensPath, json);
-  const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
-  const parentObj = U.path(parentPath, json);
+  const path = retrievePath(lensPath, json);
+  const parentPath = retrievePath(lensPath.slice(0, -1), json);
+  const parentObj = !U.isEmpty(path) ? U.path(parentPath, json) : null;
   const targetObj = !U.isEmpty(path) ? U.path(path, json) : null;
   const objectId = lensPath[lensPath.length - 1];
 
   const canUpdate = U.isObject(targetObj);
-  const canCreate = U.isNil(targetObj) &&
-    (U.isArray(parentObj) || U.isObject(parentObj));
+  const canCreate = !U.isObject(targetObj) &&
+      (U.isArray(parentObj) || U.isObject(parentObj)) ||
+    U.isEmpty(lensPath);
   const isParentArray = U.isArray(parentObj);
   let data = U.ifElse(
     () => isParentArray,
@@ -161,7 +169,7 @@ export const methodPatch = ({ ...props }) => {
   const targetObj = U.path(path, json);
 
   const canUpdate = U.isObject(targetObj) && U.isObject(body) &&
-    !U.isEmpty(path);
+    !(U.isEmpty(path) && !U.isEmpty(lensPath));
   if (canUpdate) {
     return {
       data: U.setLens({
@@ -212,7 +220,9 @@ export const methodDelete = ({ ...props }) => {
       };
     }
   }
-  return { ...props, status: HttpStatus.NOT_FOUND };
+  return U.isEmpty(path) && !U.isEmpty(lensPath)
+    ? { ...props, status: HttpStatus.NOT_FOUND }
+    : { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
 const applyMethod = ({ data, responseData, ...props }) => {
@@ -307,6 +317,8 @@ const restfulLensPath = (lensPath, json) => {
       }
       current = current[itemIndex];
       finalPath.push(`${itemIndex}`);
+    } else if (U.isString(current)) {
+      return finalPath;
     } else {
       return [];
     }
@@ -358,7 +370,12 @@ export const jsondb = (
         fileContent: file.fileContent,
         ctx,
       });
-      if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
+      const response = U.path(["resp", "response"], res);
+      const status = U.path(["status"], res);
+      if (
+        file.json && (U.isEmpty(response) || U.isNil(response)) &&
+        U.isNil(status)
+      ) {
         return U.setTo(res, { status: 404 });
       }
       const result = res.resp.response;
