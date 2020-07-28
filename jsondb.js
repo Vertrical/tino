@@ -385,14 +385,14 @@ export const jsondb = (
           JSON.stringify(result, null, 2),
         );
       }
-      return {
-        ...res,
-        ...(!U.isNil(res.responseData)
-          ? {
-            resp: { response: res.responseData },
-          }
-          : { resp: {} }),
-      };
+      return U.ifElse(
+        () => dryRun,
+        () => ({ ...res }),
+        () =>
+          !U.isNil(res.responseData)
+            ? { ...res, resp: { response: res.responseData } }
+            : { ...res, resp: {} },
+      )();
     }
     return { status: 404 };
   };
