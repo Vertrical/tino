@@ -247,7 +247,7 @@ Deno.test("POST /api", async () => {
 
   const result = await createJsonDb({ ctx });
   assertEquals(
-    body,
+    { ...parsedJson, ...body },
     result?.resp?.response,
   );
 });
@@ -266,7 +266,7 @@ Deno.test("POST /api/genres", async () => {
 
   const result = await createJsonDb({ ctx });
   assertEquals(
-    body,
+    { ...parsedJson, genres: parsedJson.genres.concat(body) },
     result?.resp?.response,
   );
 });
@@ -304,7 +304,7 @@ Deno.test("POST /api/laptops", async () => {
 
   const result = await createJsonDb({ ctx });
   assertEquals(
-    body,
+    { ...parsedJson, laptops: parsedJson.laptops.concat(body) },
     result?.resp?.response,
   );
 });
@@ -361,7 +361,7 @@ Deno.test("PUT /api/genres", async () => {
 
   const result = await createJsonDb({ ctx });
   assertEquals(
-    body,
+    { ...parsedJson, genres: body },
     result?.resp?.response,
   );
 });
@@ -379,8 +379,9 @@ Deno.test("PUT /api/genres/0/byindex", async () => {
   };
 
   const result = await createJsonDb({ ctx });
+  const [_, ...rest] = parsedJson.genres;
   assertEquals(
-    body,
+    { ...parsedJson, genres: [body, ...rest] },
     result?.resp?.response,
   );
 });
@@ -399,7 +400,7 @@ Deno.test("PUT /api/laptops", async () => {
 
   const result = await createJsonDb({ ctx });
   assertEquals(
-    body,
+    { ...parsedJson, laptops: body },
     result?.resp?.response,
   );
 });
