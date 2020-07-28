@@ -96,7 +96,7 @@ Each response is wrapped with `response` parent, like:
 import tino, { jsondb } from "tino.js";
 const app = tino.create();
 app.any(() => ({ path: "/api", use: jsondb() })); // notice the ()
-json_server.listen({ app });
+tino.listen({ app });
 ```
 (Please note that `jsondb` must be called. This is because it is a higher order function.)
 
@@ -191,5 +191,5 @@ deno run --allow-net --allow-read --allow-write tino.js --port=7000
 Similarly, in your code you can pass it to `listen` method:
 ```js
 // if you omit port, it will be 8000
-json_server.listen({ app, port: 7777 });
+tino.listen({ app, port: 7777 });
 ```
