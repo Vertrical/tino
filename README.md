@@ -1,49 +1,155 @@
-## JSON Server for Deno
+# Tino
+
+HTTP server for Deno with local JSON REST API for rapid prototyping.
+
+## Install and Use
 
 1. Install Deno: https://deno.land/#installation
-2. Try out repl: `deno --allow-net repl.js`
-3. Run tests: `deno test tests/server.test.js`
+2. Try it out: `$ deno run --allow-net --allow-read --allow-write https://raw.githubusercontent.com/Vertrical/json_server/develop/json_server.js`
+3. Open http://localhost:8000/api
 
-### Minimal configuration: (for example in repl.js file)
+Internally Tino uses `jsondb responder` which opens `/api` path for playing around. It uses `db.json` file by default as a database.
+
+## Run tests
+
+Run: `$ deno test`
+
+All tests are included in `./tests` directory.
+
+## Minimal configuration
 
 ```js
-import json_server from "./json_server.js";
-const app = json_server.create();
+// app.js
+import tino from "https://raw.githubusercontent.com/Vertrical/json_server/develop/json_server.js";
+const app = tino.create();
 app.get(() => ({ path: "/ping", resp: "pong" }));
-json_server.listen({ app, port: 8000 });
+// Or
+app.get(() => ({ path: "/ping", resp: () => "pong" }));
+// Or
+app.get(() => ({ path: "/ping", resp: async () => "pong" }));
+tino.listen({ app, port: 8000 });
 ```
 
-1. Now run the server: `deno --allow-net repl.js`
-2. Send a request: `http :8000/ping` (using [HTTPie](https://httpie.org/) or curl, etc.)
+1. Now run the server: `$ deno run --allow-net app.js`
+2. Send a request: `$ http :8000/ping` (HTTPie, curl, Postman, etc.)
+3. Receive `"pong"` as `text/plain` content type
 
-(`resp` can be anything. If it's a function, it will be called no matter if it's async or not.)
+Tino application `app` supports following HTTP methods: GET, POST, PUT, PATCH, DELETE. Method names are lowercased.
 
-### Purpose
+`resp` can be anything, but it's a controller if it's a function. If it's a function, it will be called no matter if it's async or not. If it's an object (or returned as an object), content type will be `application/json`.
 
-1. It is intended for developers for rapid prototyping and development.
-2. Besides having ability to have DB mockup and RESTful operations on it, it is also capable to respond to custom endpoints defined by a human.
-3. This early version is a protoype written in JavaScript with plan to make it fully in TypeScript.
+## `resp` definition
 
-### Using `jsondb` responder
+If defined as a function, `resp` receives following parameters:
 
-This responder is small package which handles CRUD operations on `db.json` file.
-You only need to set it up as an endpoint, for example:
+1. `body` - body payload for POST, PUT or PATCH methods
+2. `params` - parameters from path definition, e.g. `/path/:id`
+3. `query` - query string like `?p=1&q=2`
+4. `custom params` - anything else provided to method definition, except `path`, `resp` or `use`
+
+Basically you can test this with following definition:
 ```js
-import json_server, { jsondb } from "./json_server.js";
-const app = json_server.create();
+// $ http POST :8000/post/123?q=1 foo=bar
+app.post(() => ({
+  path: "/post/:id?",
+  resp: ({ body, params, query, something }) => ({ body, params, query, something }),
+  something: "else",
+}));
+```
+
+Response received should be:
+```json
+{
+  "body": {
+    "foo": "bar"
+  },
+  "params": {
+    "id": "123"
+  },
+  "query": {
+    "q": "1"
+  },
+  "something": "else"
+}
+```
+
+## Using `jsondb` responder
+
+This responder is just a small package which handles CRUD operations on `db.json` file.
+
+Each response is wrapped with `response` parent, like:
+```js
+// GET /api/laptops/1234
+{
+  "response": {
+    "id": "1234",
+    "brand": "apple"
+  }
+}
+```
+
+### How is `jsondb` responder defined?
+
+`jsondb` responder is already integrated with Tino so you don't need to do anything. But, if you want to define it nevertheless, you can do it like below:
+
+```js
+import tino, { jsondb } from "tino.js";
+const app = tino.create();
 app.any(() => ({ path: "/api", use: jsondb() })); // notice the ()
 json_server.listen({ app });
 ```
-(Please note that `jsondb` must be called. This is because it is a higher order function, for testing purposes processor of JSON file can be replaced.)
-`any` is needed because we want ANY HTTP METHOD to be used with this. For example `POST` will create a new record.
-This means you can shoot any HTTP method straight to json_server on `/api` endpoint.
-For example if you have such db.json file:
-```json
-{
-  "color": "green"
-}
+(Please note that `jsondb` must be called. This is because it is a higher order function.)
+
+`any` is needed because we want ANY HTTP METHOD to be used with this.
+
+## Examples
+
+```js
+// Custom endpoints:
+
+// Define parameters:
+// :8000/muesli/choco
+app.get(() => ({ path: "/muesli/:type", resp: ({ params }) => params.type }));
+// $ "choco"
+// text/plain
+
+// Access query params:
+// :8000/muesli/fruit?quantity=3
+app.get(() => ({ path: "/muesli/:type", resp: ({ params, query }) => ({ params, query }) }));
+// $ { "params": { "type": "fruit" }, "query": { "quantity": "3" }}
+// application/json
+
+
+// POST :8000/ingredients name=quinoa
+app.post(() => ({ path: "/ingredients", resp: ({ body }) => body }))
+// $ "quinoa"
+// text/plain
 ```
-And target following endpoint: (GET method) `http :8000/api/color` you would get response "green" with status 200.
+### JSON REST API
+Test JSON file is included in [tests/jsondb.test.json](https://github.com/Vertrical/json_server/blob/develop/tests/jsondb.test.json). You need to create your `./db.json` file to operate agains it.
+
+Having the content same as in jsondb.test.json file, we would have following requests returning respective responses:
+```sh
+# Get list of items:
+$ http :8000/api/laptops
+
+# Get item by id: (jsondb treats any "id" found in an entity as ID)
+$ http :8000/api/laptops/123
+
+# Create new item:
+$ http POST :8000/api/laptops id=789 brand=apple
+
+# Replace an item:
+$ http PUT :8000/api/laptops/789 brand=asus
+
+# Update an item:
+$ http PATCH :8000/api/laptops/789 brand=asus
+
+# DELETE an item:
+$ http DELETE :8000/api/laptops/789
+```
+
+### Customize API
 
 If you want to change endpoint from `/api` to something else, just replace it:
 ```js
@@ -58,4 +164,4 @@ Remember that you need to create file `db.json` yourself. If not, the response w
 
 Difference between `resp` and `use` is that `use` must return `{ resp, status? }` (status is optional). Response again can be anything - if it's a function, it will be executed no matter if it's async or not. 
 
-This way you can write your own responders easily using `use`. `jsondb` is just a responder which reads and maintains json.db file.
+This way you can write your own responders easily using `use`.
