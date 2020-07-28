@@ -419,10 +419,11 @@ export const jsondb = (
           JSON.stringify(result, null, 2),
         );
       }
-      return {
-        ...res,
-        resp: { response: res.responseData },
-      };
+      return U.ifElse(
+        () => dryRun,
+        () => ({ ...res }),
+        () => { ...res, resp: { response: res.responseData } }
+      )();
     }
     return { status: 404 };
   };
