@@ -91,6 +91,7 @@ export const methodPost = ({ ...props }) => {
   if (!U.isArray(targetObj) && !U.isEmpty(lensPath)) {
     return {
       ...props,
+      responseData: U.isObject(targetObj) ? {} : null,
       status: HttpStatus.UNPROCESSABLE_ENTITY,
     };
   } else if (canCreate) {
@@ -106,7 +107,18 @@ export const methodPost = ({ ...props }) => {
       status: HttpStatus.OK,
     };
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+
+  const targetObjectResponseData = U.cond([
+    { when: () => U.isArray(targetObj), use: () => [] },
+    { when: () => U.isObject(targetObj), use: () => {}  },
+    { when: () => true, use: () => null },
+  ])();
+
+  return {
+    ...props,
+    responseData: targetObjectResponseData,
+    status: HttpStatus.BAD_REQUEST
+  };
 };
 
 export const methodPut = ({ ...props }) => {
@@ -148,9 +160,16 @@ export const methodPut = ({ ...props }) => {
         : null,
   )();
 
+  const targetObjectResponseData = U.cond([
+    { when: () => U.isArray(targetObj), use: () => [] },
+    { when: () => U.isObject(targetObj), use: () => {}  },
+    { when: () => true, use: () => null },
+  ])();
+
   if (canUpdate) {
     return {
       data,
+      responseData: targetObjectResponseData,
       status: HttpStatus.OK,
     };
   } else if (canCreate) {
@@ -160,7 +179,11 @@ export const methodPut = ({ ...props }) => {
       status: HttpStatus.CREATED,
     };
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+  return {
+    ...props,
+    responseData: targetObjectResponseData,
+    status: HttpStatus.BAD_REQUEST
+  };
 };
 
 export const methodPatch = ({ ...props }) => {
@@ -180,7 +203,18 @@ export const methodPatch = ({ ...props }) => {
       status: HttpStatus.OK,
     };
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+
+  const targetObjectResponseData = U.cond([
+    { when: () => U.isArray(targetObj), use: () => [] },
+    { when: () => U.isObject(targetObj), use: () => {}  },
+    { when: () => true, use: () => null },
+  ])();
+
+  return {
+    ...props,
+    responseData: targetObjectResponseData,
+    status: HttpStatus.BAD_REQUEST
+  };
 };
 
 export const methodDelete = ({ ...props }) => {
@@ -387,11 +421,7 @@ export const jsondb = (
       }
       return {
         ...res,
-        ...(!U.isNil(res.responseData)
-          ? {
-            resp: { response: res.responseData },
-          }
-          : { resp: {} }),
+        resp: { response: res.responseData },
       };
     }
     return { status: 404 };
