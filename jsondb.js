@@ -110,14 +110,14 @@ export const methodPost = ({ ...props }) => {
 
   const targetObjectResponseData = U.cond([
     { when: () => U.isArray(targetObj), use: () => [] },
-    { when: () => U.isObject(targetObj), use: () => {}  },
+    { when: () => U.isObject(targetObj), use: () => {} },
     { when: () => true, use: () => null },
   ])();
 
   return {
     ...props,
     responseData: targetObjectResponseData,
-    status: HttpStatus.BAD_REQUEST
+    status: HttpStatus.BAD_REQUEST,
   };
 };
 
@@ -162,7 +162,7 @@ export const methodPut = ({ ...props }) => {
 
   const targetObjectResponseData = U.cond([
     { when: () => U.isArray(targetObj), use: () => [] },
-    { when: () => U.isObject(targetObj), use: () => {}  },
+    { when: () => U.isObject(targetObj), use: () => {} },
     { when: () => true, use: () => null },
   ])();
 
@@ -182,7 +182,7 @@ export const methodPut = ({ ...props }) => {
   return {
     ...props,
     responseData: targetObjectResponseData,
-    status: HttpStatus.BAD_REQUEST
+    status: HttpStatus.BAD_REQUEST,
   };
 };
 
@@ -206,14 +206,14 @@ export const methodPatch = ({ ...props }) => {
 
   const targetObjectResponseData = U.cond([
     { when: () => U.isArray(targetObj), use: () => [] },
-    { when: () => U.isObject(targetObj), use: () => {}  },
+    { when: () => U.isObject(targetObj), use: () => {} },
     { when: () => true, use: () => null },
   ])();
 
   return {
     ...props,
     responseData: targetObjectResponseData,
-    status: HttpStatus.BAD_REQUEST
+    status: HttpStatus.BAD_REQUEST,
   };
 };
 
