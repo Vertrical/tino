@@ -422,7 +422,7 @@ export const jsondb = (
       return U.ifElse(
         () => dryRun,
         () => ({ ...res }),
-        () => { ...res, resp: { response: res.responseData } }
+        () => ({ ...res, resp: { response: res.responseData } })
       )();
     }
     return { status: 404 };
