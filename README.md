@@ -165,3 +165,31 @@ Remember that you need to create file `db.json` yourself. If not, the response w
 Difference between `resp` and `use` is that `use` must return `{ resp, status? }` (status is optional). Response again can be anything - if it's a function, it will be executed no matter if it's async or not. 
 
 This way you can write your own responders easily using `use`.
+
+## CLI and options for Tino and jsondb
+
+### Dry run for jsondb
+
+If you want only to check how a request would modify db.json database without touching it, you can do a dry run.
+```sh
+# --allow-write is not necessary
+deno run --allow-net --allow-read tino.js --dry=true
+```
+
+In your code you can achieve same by passing `true` to `jsondb` responder:
+```js
+app.get(() => ({ path: "/ping", use: jsondb(true) }));
+```
+
+### Custom port
+
+You can run Tino on custom port:
+```sh
+deno run --allow-net --allow-read --allow-write tino.js --port=7000
+```
+
+Similarly, in your code you can pass it to `listen` method:
+```js
+// if you omit port, it will be 8000
+json_server.listen({ app, port: 7777 });
+```
