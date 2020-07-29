@@ -25,8 +25,14 @@ const setState = (path, { method, resp, ...props }) => {
   if (!method && props.status) {
     state.set(props.status, { resp, ...U.dissoc("status", props) });
   } else {
+    const currentDefinition = state.get(path);
     const pathDefinition = { [method]: { resp, ...props } };
-    state.set(path, pathDefinition);
+
+    if (!U.isNil(currentDefinition)) {
+      state.set(path, { ...currentDefinition, ...pathDefinition });
+    } else {
+      state.set(path, pathDefinition);
+    }
   }
   return state;
 };
