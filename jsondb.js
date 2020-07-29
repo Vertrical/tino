@@ -108,15 +108,11 @@ export const methodPost = ({ ...props }) => {
     };
   }
 
-  const targetObjectResponseData = U.cond([
-    { when: () => U.isArray(targetObj), use: () => [] },
-    { when: () => U.isObject(targetObj), use: () => {} },
-    { when: () => true, use: () => null },
-  ])();
+  const responseData = createResponseData(targetObj)();
 
   return {
     ...props,
-    responseData: targetObjectResponseData(),
+    responseData,
     status: HttpStatus.BAD_REQUEST,
   };
 };
@@ -160,16 +156,12 @@ export const methodPut = ({ ...props }) => {
         : null,
   )();
 
-  const targetObjectResponseData = U.cond([
-    { when: () => U.isArray(targetObj), use: () => [] },
-    { when: () => U.isObject(targetObj), use: () => ({}) },
-    { when: () => true, use: () => null },
-  ])();
+  const responseData = createResponseData(targetObj)();
 
   if (canUpdate) {
     return {
       data,
-      responseData: targetObjectResponseData(),
+      responseData,
       status: HttpStatus.OK,
     };
   } else if (canCreate) {
@@ -181,7 +173,7 @@ export const methodPut = ({ ...props }) => {
   }
   return {
     ...props,
-    responseData: targetObjectResponseData(),
+    responseData,
     status: HttpStatus.BAD_REQUEST,
   };
 };
@@ -204,15 +196,11 @@ export const methodPatch = ({ ...props }) => {
     };
   }
 
-  const targetObjectResponseData = U.cond([
-    { when: () => U.isArray(targetObj), use: () => [] },
-    { when: () => U.isObject(targetObj), use: () => {} },
-    { when: () => true, use: () => null },
-  ])();
+  const responseData = createResponseData(targetObj)();
 
   return {
     ...props,
-    responseData: targetObjectResponseData(),
+    responseData,
     status: HttpStatus.BAD_REQUEST,
   };
 };
@@ -388,6 +376,12 @@ export const processJsonOrContent = (file) =>
   U.asyncCompose(buildResponseBody)(file);
 
 const isMutatingRequestMethod = (method) => !["GET", "HEAD"].includes(method);
+
+const createResponseData = (targetObj) => U.cond([
+  { when: () => U.isArray(targetObj), use: () => [] },
+  { when: () => U.isObject(targetObj), use: () => ({}) },
+  { when: () => true, use: () => null },
+])();
 
 export const jsondb = (
   dryRun = false,
