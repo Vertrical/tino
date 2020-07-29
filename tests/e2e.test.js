@@ -3,7 +3,9 @@ import jsondb, {
   checkJsonDb,
   processJsonOrContent,
 } from "../jsondb.js";
-import { HttpStatus } from "../http_server.js";
+import { HttpStatus, processRequest } from "../http_server.js";
+import json_server from "../json_server.js";
+import * as U from "../utils.js";
 
 const jsonDbTestPath = "tests/jsondb.test.json";
 const jsonDbTestCopyPath = "tests/jsondb_copy.test.json";
@@ -41,6 +43,17 @@ const createJsonDb = async ({
     processJsonOrContent,
     () => checkJsonDb(jsonDbPath),
   )(ctx);
+
+const createCustomEndpointResponse = async (
+  { req, state, resReader = JSON.parse, bodyReader = async () => null },
+) =>
+  await U.tryCatch(
+    async () => {
+      const response = await processRequest({ req, state, bodyReader });
+      return [response, resReader(response.body)];
+    },
+    () => null,
+  );
 
 Deno.test("beforeAll e2e", beforeAll);
 
@@ -600,6 +613,36 @@ Deno.test("DELETE /api/color", async () => {
   assertEquals(
     HttpStatus.OK,
     result.status,
+  );
+});
+
+Deno.test("Allows passing multiple method handlers for the same path", async () => {
+  const app = json_server.create();
+  const req1 = {
+    url: "/path",
+    method: "GET",
+  };
+  const req2 = {
+    url: "/path",
+    method: "DELETE",
+  };
+  app.get(() => ({ path: "/path", resp: "ping" }));
+  app.delete(() => ({ path: "/path", resp: "pong" }));
+  const state = app.getState();
+  const [_, resBody1] = await createCustomEndpointResponse(
+    { req: req1, state, resReader: (_) => _ },
+  );
+  const [__, resBody2] = await createCustomEndpointResponse(
+    { req: req2, state, resReader: (_) => _ },
+  );
+
+  assertEquals(
+    "ping",
+    resBody1,
+  );
+  assertEquals(
+    "pong",
+    resBody2,
   );
 });
 
