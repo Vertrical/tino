@@ -116,7 +116,7 @@ export const methodPost = ({ ...props }) => {
 
   return {
     ...props,
-    responseData: targetObjectResponseData,
+    responseData: targetObjectResponseData(),
     status: HttpStatus.BAD_REQUEST,
   };
 };
@@ -162,14 +162,14 @@ export const methodPut = ({ ...props }) => {
 
   const targetObjectResponseData = U.cond([
     { when: () => U.isArray(targetObj), use: () => [] },
-    { when: () => U.isObject(targetObj), use: () => {} },
+    { when: () => U.isObject(targetObj), use: () => ({}) },
     { when: () => true, use: () => null },
   ])();
 
   if (canUpdate) {
     return {
       data,
-      responseData: targetObjectResponseData,
+      responseData: targetObjectResponseData(),
       status: HttpStatus.OK,
     };
   } else if (canCreate) {
@@ -181,7 +181,7 @@ export const methodPut = ({ ...props }) => {
   }
   return {
     ...props,
-    responseData: targetObjectResponseData,
+    responseData: targetObjectResponseData(),
     status: HttpStatus.BAD_REQUEST,
   };
 };
@@ -212,7 +212,7 @@ export const methodPatch = ({ ...props }) => {
 
   return {
     ...props,
-    responseData: targetObjectResponseData,
+    responseData: targetObjectResponseData(),
     status: HttpStatus.BAD_REQUEST,
   };
 };
@@ -422,7 +422,7 @@ export const jsondb = (
       return U.ifElse(
         () => dryRun,
         () => ({ ...res }),
-        () => ({ ...res, resp: { response: res.responseData } })
+        () => ({ ...res, resp: { response: res.responseData } }),
       )();
     }
     return { status: 404 };
