@@ -108,7 +108,7 @@ export const methodPost = ({ ...props }) => {
     };
   }
 
-  const responseData = createResponseData(targetObj)();
+  const responseData = createResponseData(targetObj);
 
   return {
     ...props,
@@ -156,7 +156,7 @@ export const methodPut = ({ ...props }) => {
         : null,
   )();
 
-  const responseData = createResponseData(targetObj)();
+  const responseData = createResponseData(targetObj);
 
   if (canUpdate) {
     return {
@@ -196,7 +196,7 @@ export const methodPatch = ({ ...props }) => {
     };
   }
 
-  const responseData = createResponseData(targetObj)();
+  const responseData = createResponseData(targetObj);
 
   return {
     ...props,
@@ -378,10 +378,10 @@ export const processJsonOrContent = (file) =>
 const isMutatingRequestMethod = (method) => !["GET", "HEAD"].includes(method);
 
 const createResponseData = (targetObj) => U.cond([
-  { when: () => U.isArray(targetObj), use: () => [] },
-  { when: () => U.isObject(targetObj), use: () => ({}) },
+  { when: U.isArray, use: () => [] },
+  { when: U.isObject, use: () => ({}) },
   { when: () => true, use: () => null },
-])();
+])(targetObj)();
 
 export const jsondb = (
   dryRun = false,
