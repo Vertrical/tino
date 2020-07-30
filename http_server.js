@@ -70,7 +70,7 @@ const execMaybeHandler = async ({ maybeFunction, ctx }) => {
 const handleUse = async ({ ctx, ...responseDefinition }) => {
   const url = ctx.req.url;
   for (const [pathPattern, pathArgs] of ctx.state) {
-    if (url.startsWith(pathPattern)) {
+    if (`/${url.split('/')[1]}` === pathPattern) {
       const _useHandler = _pickUse(pathArgs);
       if (_useHandler) {
         const handlerCallResult = await execMaybeHandler({
