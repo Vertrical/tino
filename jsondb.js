@@ -66,8 +66,8 @@ export const tryDirectLens = ({ lensPath, json, data, ...props }) => {
     data = U.path(lensPath, json);
   } else {
     data = lensPath.includes("byindex")
-    ? U.path(retrievePath(lensPath, json), json)
-    : data;
+      ? U.path(retrievePath(lensPath, json), json)
+      : data;
   }
   return { lensPath, data, responseData: data, json, ...props };
 };
