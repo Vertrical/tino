@@ -377,11 +377,11 @@ export const processJsonOrContent = (file) =>
 
 const isMutatingRequestMethod = (method) => !["GET", "HEAD"].includes(method);
 
-const createResponseData = (targetObj) => U.cond([
-  { when: U.isArray, use: () => [] },
-  { when: U.isObject, use: () => ({}) },
-  { when: () => true, use: () => null },
-])(targetObj)();
+const createResponseData = U.cond([
+  { when: U.isArray, use: [] },
+  { when: U.isObject, use: {} },
+  { when: () => true, use: null },
+]);
 
 export const jsondb = (
   dryRun = false,
