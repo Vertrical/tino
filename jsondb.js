@@ -91,6 +91,7 @@ export const methodPost = ({ ...props }) => {
   if (!U.isArray(targetObj) && !U.isEmpty(lensPath)) {
     return {
       ...props,
+      responseData: U.isObject(targetObj) ? {} : null,
       status: HttpStatus.UNPROCESSABLE_ENTITY,
     };
   } else if (canCreate) {
@@ -106,7 +107,14 @@ export const methodPost = ({ ...props }) => {
       status: HttpStatus.OK,
     };
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+
+  const responseData = createResponseData(targetObj);
+
+  return {
+    ...props,
+    responseData,
+    status: HttpStatus.BAD_REQUEST,
+  };
 };
 
 export const methodPut = ({ ...props }) => {
@@ -148,9 +156,12 @@ export const methodPut = ({ ...props }) => {
         : null,
   )();
 
+  const responseData = createResponseData(targetObj);
+
   if (canUpdate) {
     return {
       data,
+      responseData,
       status: HttpStatus.OK,
     };
   } else if (canCreate) {
@@ -160,7 +171,11 @@ export const methodPut = ({ ...props }) => {
       status: HttpStatus.CREATED,
     };
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+  return {
+    ...props,
+    responseData,
+    status: HttpStatus.BAD_REQUEST,
+  };
 };
 
 export const methodPatch = ({ ...props }) => {
@@ -180,7 +195,14 @@ export const methodPatch = ({ ...props }) => {
       status: HttpStatus.OK,
     };
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+
+  const responseData = createResponseData(targetObj);
+
+  return {
+    ...props,
+    responseData,
+    status: HttpStatus.BAD_REQUEST,
+  };
 };
 
 export const methodDelete = ({ ...props }) => {
@@ -355,6 +377,12 @@ export const processJsonOrContent = (file) =>
 
 const isMutatingRequestMethod = (method) => !["GET", "HEAD"].includes(method);
 
+const createResponseData = U.cond([
+  { when: U.isArray, use: [] },
+  { when: U.isObject, use: {} },
+  { when: () => true, use: null },
+]);
+
 export const jsondb = (
   dryRun = false,
   process = processJsonOrContent,
@@ -388,10 +416,7 @@ export const jsondb = (
       return U.ifElse(
         () => dryRun,
         () => ({ ...res }),
-        () =>
-          !U.isNil(res.responseData)
-            ? { ...res, resp: { response: res.responseData } }
-            : { ...res, resp: {} },
+        () => ({ ...res, resp: { response: res.responseData } }),
       )();
     }
     return { status: 404 };
