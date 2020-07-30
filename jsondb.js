@@ -62,9 +62,13 @@ export const tryRestful = ({
 };
 
 export const tryDirectLens = ({ lensPath, json, data, ...props }) => {
-  data = data || lensPath.includes("byindex")
+  if (U.isEmpty(lensPath)) {
+    data = U.path(lensPath, json);
+  } else {
+    data = lensPath.includes("byindex")
     ? U.path(retrievePath(lensPath, json), json)
-    : U.path(lensPath, json);
+    : data;
+  }
   return { lensPath, data, responseData: data, json, ...props };
 };
 
