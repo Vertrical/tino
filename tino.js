@@ -79,9 +79,7 @@ const jsonserverHandlers = () => ({
 });
 
 const create = (handlers = jsonserverHandlers) => {
-  // const create = () => {
   return handlers();
-  // return () => {}
 };
 
 const tino = {
@@ -93,12 +91,6 @@ export const getStatus = (status = 400, description = null) => ({
   status,
   ...(description && { description }),
 });
-
-export const compose = () => {};
-
-export const tap = () => {};
-
-export const localdb = () => {};
 
 if (import.meta.main) {
   const app = tino.create();
