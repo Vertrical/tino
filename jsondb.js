@@ -35,7 +35,7 @@ export const tryRestful = ({
   next = false,
   ...props
 }) => {
-  if (!U.isNil(data) && !next || lensPath.includes("byindex")) {
+  if (!U.isNil(data) && !next || lensPath[lensPath.length - 1] === "byindex") {
     return { data, responseData: data, json, lensPath, ...props };
   }
   const [singlePathItem, ...restPathItems] = props.restPathItems || lensPath;
@@ -62,9 +62,13 @@ export const tryRestful = ({
 };
 
 export const tryDirectLens = ({ lensPath, json, data, ...props }) => {
-  data = data || lensPath.includes("byindex")
-    ? U.path(retrievePath(lensPath, json), json)
-    : U.path(lensPath, json);
+  if (U.isEmpty(lensPath)) {
+    data = U.path(lensPath, json);
+  } else {
+    data = lensPath[lensPath.length - 1] === "byindex"
+      ? U.path(retrievePath(lensPath, json), json)
+      : data;
+  }
   return { lensPath, data, responseData: data, json, ...props };
 };
 
@@ -296,7 +300,7 @@ const retrievePath = (lensPath, json) => {
       current = current[pathItem];
       finalPath.push(pathItem);
     } else if (U.isArray(current)) {
-      const isByIndex = pathCopy.slice(0, 1).includes("byindex");
+      const isByIndex = pathCopy.slice(-1).includes("byindex");
 
       if (isByIndex) {
         const index = Number(pathItem);

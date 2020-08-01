@@ -1,5 +1,3 @@
-import * as U from "./utils.js";
-
 const args = Deno.args;
 
 export const CliArgument = {

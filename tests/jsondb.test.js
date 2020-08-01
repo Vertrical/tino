@@ -64,7 +64,7 @@ Deno.test("checkJsonDb", async () => {
 
 Deno.test("tryDirectLens", () => {
   let method = "GET";
-  let lensPath = ["genres", "0"];
+  let lensPath = ["genres", "0", "byindex"];
   let json = JSON.parse(jsonDbTest);
   let result = tryDirectLens({ lensPath, json, method });
   assertEquals("comedy", result.data);
@@ -197,7 +197,7 @@ Deno.test("buildResponse", () => {
 
 Deno.test("handleJson", () => {
   let method = "GET";
-  let lensPath = ["genres", "0"];
+  let lensPath = ["genres", "0", "byindex"];
   let json = JSON.parse(jsonDbTest);
   let result = handleJson({ method, lensPath, json });
   assertEquals(
