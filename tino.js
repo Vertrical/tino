@@ -84,7 +84,7 @@ const create = (handlers = jsonserverHandlers) => {
   // return () => {}
 };
 
-const json_server = {
+const tino = {
   create,
   listen,
 };
@@ -101,13 +101,13 @@ export const tap = () => {};
 export const localdb = () => {};
 
 if (import.meta.main) {
-  const app = json_server.create();
+  const app = tino.create();
   const port = U.tryCatch(
     () => Number(optionValue(CliArgument.PORT)),
     () => 8000,
   );
-  json_server.listen({ app, port });
+  tino.listen({ app, port });
   console.log(`Server running at :${port}`);
 }
 
-export default json_server;
+export default tino;

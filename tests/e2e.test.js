@@ -4,7 +4,7 @@ import jsondb, {
   processJsonOrContent,
 } from "../jsondb.js";
 import { HttpStatus, processRequest } from "../http_server.js";
-import json_server from "../json_server.js";
+import tino from "../tino.js";
 import * as U from "../utils.js";
 
 const jsonDbTestPath = "tests/jsondb.test.json";
@@ -618,7 +618,7 @@ Deno.test("DELETE /api/color", async () => {
 });
 
 Deno.test("Allows passing multiple method handlers for the same path", async () => {
-  const app = json_server.create();
+  const app = tino.create();
   const req1 = {
     url: "/path",
     method: "GET",
