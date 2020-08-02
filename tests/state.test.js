@@ -1,8 +1,8 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
-import json_server from "../json_server.js";
+import tino from "../tino.js";
 
-Deno.test("json_server state", () => {
-  let app = json_server.create();
+Deno.test("Tino state", () => {
+  let app = tino.create();
   let fake = new Map();
 
   app.get(() => ({ path: "/ping", resp: "pong" }));

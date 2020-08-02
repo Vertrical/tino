@@ -1,9 +1,9 @@
-import { readJson, readFileStr, fileExists } from "./deps.js";
+import { readJson, fileExists } from "./deps.js";
 import * as U from "./utils.js";
 import { HttpStatus } from "./http_server.js";
 
 export const readJsonDb = async (dbPathname = "./db.json") => {
-  const content = await readFileStr(dbPathname);
+  const content = await Deno.readTextFile(dbPathname);
   if (U.isEmpty(content)) {
     console.warn("warn: ", "Content is empty");
     return { json: {} };
@@ -35,7 +35,7 @@ export const tryRestful = ({
   next = false,
   ...props
 }) => {
-  if (!U.isNil(data) && !next) {
+  if (!U.isNil(data) && !next || lensPath[lensPath.length - 1] === "byindex") {
     return { data, responseData: data, json, lensPath, ...props };
   }
   const [singlePathItem, ...restPathItems] = props.restPathItems || lensPath;
@@ -62,7 +62,13 @@ export const tryRestful = ({
 };
 
 export const tryDirectLens = ({ lensPath, json, data, ...props }) => {
-  data = data || U.path(lensPath, json);
+  if (U.isEmpty(lensPath)) {
+    data = U.path(lensPath, json);
+  } else {
+    data = lensPath[lensPath.length - 1] === "byindex"
+      ? U.path(retrievePath(lensPath, json), json)
+      : data;
+  }
   return { lensPath, data, responseData: data, json, ...props };
 };
 
@@ -79,14 +85,20 @@ export const tryProps = ({ data, ...props }) => {
 
 export const methodPost = ({ ...props }) => {
   const { lensPath, json, body } = props;
-  const path = restfulLensPath(lensPath, json);
+  const path = retrievePath(lensPath, json);
   const targetObj = U.path(path, json);
 
   const canCreate = !U.isNil(body) &&
     !U.isNil(targetObj) &&
     (U.isArray(targetObj) || U.isObject(targetObj)) &&
-    !U.isEmpty(path);
-  if (canCreate) {
+    !(U.isEmpty(path) && !U.isEmpty(lensPath));
+  if (!U.isArray(targetObj) && !U.isEmpty(lensPath)) {
+    return {
+      ...props,
+      responseData: U.isObject(targetObj) ? {} : null,
+      status: HttpStatus.UNPROCESSABLE_ENTITY,
+    };
+  } else if (canCreate) {
     return {
       data: U.setLens({
         path,
@@ -96,23 +108,31 @@ export const methodPost = ({ ...props }) => {
         obj: json,
       }),
       responseData: body,
-      status: HttpStatus.OK,
+      status: HttpStatus.CREATED,
     };
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+
+  const responseData = createResponseData(targetObj);
+
+  return {
+    ...props,
+    responseData,
+    status: HttpStatus.BAD_REQUEST,
+  };
 };
 
 export const methodPut = ({ ...props }) => {
   const { lensPath, json, body } = props;
-  const path = restfulLensPath(lensPath, json);
-  const parentPath = restfulLensPath(lensPath.slice(0, -1), json);
-  const parentObj = U.path(parentPath, json);
+  const path = retrievePath(lensPath, json);
+  const parentPath = retrievePath(lensPath.slice(0, -1), json);
+  const parentObj = !U.isEmpty(path) ? U.path(parentPath, json) : null;
   const targetObj = !U.isEmpty(path) ? U.path(path, json) : null;
   const objectId = lensPath[lensPath.length - 1];
 
   const canUpdate = U.isObject(targetObj);
-  const canCreate = U.isNil(targetObj) &&
-    (U.isArray(parentObj) || U.isObject(parentObj));
+  const canCreate = !U.isObject(targetObj) &&
+      (U.isArray(parentObj) || U.isObject(parentObj)) ||
+    U.isEmpty(lensPath);
   const isParentArray = U.isArray(parentObj);
   let data = U.ifElse(
     () => isParentArray,
@@ -140,9 +160,12 @@ export const methodPut = ({ ...props }) => {
         : null,
   )();
 
+  const responseData = createResponseData(targetObj);
+
   if (canUpdate) {
     return {
       data,
+      responseData,
       status: HttpStatus.OK,
     };
   } else if (canCreate) {
@@ -152,7 +175,11 @@ export const methodPut = ({ ...props }) => {
       status: HttpStatus.CREATED,
     };
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+  return {
+    ...props,
+    responseData,
+    status: HttpStatus.BAD_REQUEST,
+  };
 };
 
 export const methodPatch = ({ ...props }) => {
@@ -161,7 +188,7 @@ export const methodPatch = ({ ...props }) => {
   const targetObj = U.path(path, json);
 
   const canUpdate = U.isObject(targetObj) && U.isObject(body) &&
-    !U.isEmpty(path);
+    !(U.isEmpty(path) && !U.isEmpty(lensPath));
   if (canUpdate) {
     return {
       data: U.setLens({
@@ -172,7 +199,14 @@ export const methodPatch = ({ ...props }) => {
       status: HttpStatus.OK,
     };
   }
-  return { ...props, status: HttpStatus.BAD_REQUEST };
+
+  const responseData = createResponseData(targetObj);
+
+  return {
+    ...props,
+    responseData,
+    status: HttpStatus.BAD_REQUEST,
+  };
 };
 
 export const methodDelete = ({ ...props }) => {
@@ -212,7 +246,9 @@ export const methodDelete = ({ ...props }) => {
       };
     }
   }
-  return { ...props, status: HttpStatus.NOT_FOUND };
+  return U.isEmpty(path) && !U.isEmpty(lensPath)
+    ? { ...props, status: HttpStatus.NOT_FOUND }
+    : { ...props, status: HttpStatus.BAD_REQUEST };
 };
 
 const applyMethod = ({ data, responseData, ...props }) => {
@@ -264,7 +300,7 @@ const retrievePath = (lensPath, json) => {
       current = current[pathItem];
       finalPath.push(pathItem);
     } else if (U.isArray(current)) {
-      const isByIndex = pathCopy.slice(0, 1).includes("byindex");
+      const isByIndex = pathCopy.slice(-1).includes("byindex");
 
       if (isByIndex) {
         const index = Number(pathItem);
@@ -307,6 +343,8 @@ const restfulLensPath = (lensPath, json) => {
       }
       current = current[itemIndex];
       finalPath.push(`${itemIndex}`);
+    } else if (U.isString(current)) {
+      return finalPath;
     } else {
       return [];
     }
@@ -343,6 +381,12 @@ export const processJsonOrContent = (file) =>
 
 const isMutatingRequestMethod = (method) => !["GET", "HEAD"].includes(method);
 
+const createResponseData = U.cond([
+  { when: U.isArray, use: [] },
+  { when: U.isObject, use: {} },
+  { when: () => true, use: null },
+]);
+
 export const jsondb = (
   dryRun = false,
   process = processJsonOrContent,
@@ -358,7 +402,12 @@ export const jsondb = (
         fileContent: file.fileContent,
         ctx,
       });
-      if (file.json && U.isEmpty(U.path(["resp", "response"], res))) {
+      const response = U.path(["resp", "response"], res);
+      const status = U.path(["status"], res);
+      if (
+        file.json && (U.isEmpty(response) || U.isNil(response)) &&
+        U.isNil(status)
+      ) {
         return U.setTo(res, { status: 404 });
       }
       const result = res.resp.response;
@@ -368,14 +417,11 @@ export const jsondb = (
           JSON.stringify(result, null, 2),
         );
       }
-      return {
-        ...res,
-        ...(!U.isNil(res.responseData)
-          ? {
-            resp: { response: res.responseData },
-          }
-          : { resp: {} }),
-      };
+      return U.ifElse(
+        () => dryRun,
+        () => ({ ...res }),
+        () => ({ ...res, resp: { response: res.responseData } }),
+      )();
     }
     return { status: 404 };
   };

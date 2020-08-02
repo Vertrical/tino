@@ -25,8 +25,14 @@ const setState = (path, { method, resp, ...props }) => {
   if (!method && props.status) {
     state.set(props.status, { resp, ...U.dissoc("status", props) });
   } else {
+    const currentDefinition = state.get(path);
     const pathDefinition = { [method]: { resp, ...props } };
-    state.set(path, pathDefinition);
+
+    if (!U.isNil(currentDefinition)) {
+      state.set(path, { ...currentDefinition, ...pathDefinition });
+    } else {
+      state.set(path, pathDefinition);
+    }
   }
   return state;
 };
@@ -73,12 +79,10 @@ const jsonserverHandlers = () => ({
 });
 
 const create = (handlers = jsonserverHandlers) => {
-  // const create = () => {
   return handlers();
-  // return () => {}
 };
 
-const json_server = {
+const tino = {
   create,
   listen,
 };
@@ -88,20 +92,14 @@ export const getStatus = (status = 400, description = null) => ({
   ...(description && { description }),
 });
 
-export const compose = () => {};
-
-export const tap = () => {};
-
-export const localdb = () => {};
-
 if (import.meta.main) {
-  const app = json_server.create();
+  const app = tino.create();
   const port = U.tryCatch(
     () => Number(optionValue(CliArgument.PORT)),
     () => 8000,
   );
-  json_server.listen({ app, port });
+  tino.listen({ app, port });
   console.log(`Server running at :${port}`);
 }
 
-export default json_server;
+export default tino;

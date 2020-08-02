@@ -16,12 +16,13 @@ import jsondb, {
   methodDelete,
   methodPatch,
 } from "../jsondb.js";
-import { readFileStr, readJson } from "../deps.js";
+import { readJson } from "../deps.js";
 import * as U from "../utils.js";
+import { HttpStatus } from "../http_server.js";
 
 const jsonDbTestPath = "tests/jsondb.test.json";
 const jsonDbTestCopyPath = "tests/jsondb_copy.test.json";
-const jsonDbTest = await readFileStr(jsonDbTestPath);
+const jsonDbTest = await Deno.readTextFile(jsonDbTestPath);
 
 const beforeAll = async () => {
   try {
@@ -63,7 +64,7 @@ Deno.test("checkJsonDb", async () => {
 
 Deno.test("tryDirectLens", () => {
   let method = "GET";
-  let lensPath = ["genres", "0"];
+  let lensPath = ["genres", "0", "byindex"];
   let json = JSON.parse(jsonDbTest);
   let result = tryDirectLens({ lensPath, json, method });
   assertEquals("comedy", result.data);
@@ -133,10 +134,9 @@ Deno.test("methodDelete", () => {
   lensPath = ["laptops", "1", "byindex"];
   result = methodDelete({ json: jsonCopy, method, lensPath });
   jsonCopy.laptops.splice(lensPath.slice(1), 1);
-  assertEquals(result, {
-    data: { ...json, laptops: jsonCopy.laptops },
-  });
+  assertEquals(result.data, { ...json, laptops: jsonCopy.laptops });
 
+  jsonCopy = JSON.parse(JSON.stringify(json));
   lensPath = ["laptops"];
   let query = { brand: "dell" };
   result = methodDelete({ json: jsonCopy, method, lensPath, query });
@@ -197,7 +197,7 @@ Deno.test("buildResponse", () => {
 
 Deno.test("handleJson", () => {
   let method = "GET";
-  let lensPath = ["genres", "0"];
+  let lensPath = ["genres", "0", "byindex"];
   let json = JSON.parse(jsonDbTest);
   let result = handleJson({ method, lensPath, json });
   assertEquals(
@@ -231,7 +231,7 @@ Deno.test("buildResponseBody", () => {
   let result = buildResponseBody(props);
   assertEquals(
     JSON.stringify(parsedJson.laptops),
-    JSON.stringify(result?.resp?.response),
+    JSON.stringify(result.resp?.response),
   );
 
   const body = { id: 657, brand: "apple" };
@@ -250,7 +250,7 @@ Deno.test("buildResponseBody", () => {
   result = buildResponseBody(props);
   assertEquals(
     JSON.stringify(parsedJson.laptops.concat(body)),
-    JSON.stringify(result?.resp?.response?.laptops),
+    JSON.stringify(result.resp?.response?.laptops),
   );
 });
 
@@ -273,7 +273,7 @@ Deno.test("jsondb", async () => {
   )(ctx);
   assertEquals(
     JSON.stringify(parsedJson.laptops),
-    JSON.stringify(result?.resp?.response),
+    JSON.stringify(result.resp?.response),
   );
 
   let body = { id: 259, brand: "hp" };
@@ -299,12 +299,99 @@ Deno.test("jsondb", async () => {
 
   assertEquals(
     JSON.stringify(body),
-    JSON.stringify(result?.resp?.response),
+    JSON.stringify(result.resp?.response),
   );
 
   assertEquals(
     JSON.stringify(newContent),
     JSON.stringify({ ...parsedJson, laptops: [...parsedJson.laptops, body] }),
+  );
+});
+
+Deno.test("Should return empty object for a object target without dry run", async () => {
+  const body = { dark: "red" };
+  const pathPattern = "/api";
+  const ctx = {
+    req: {
+      url: "/api/color",
+      method: "PUT",
+    },
+    pathPattern,
+    body,
+    query: {},
+  };
+  const result = await jsondb(
+    false,
+    processJsonOrContent,
+    () => checkJsonDb(jsonDbTestPath),
+    jsonDbTestCopyPath,
+  )(ctx);
+
+  assertEquals(
+    {},
+    result.resp?.response,
+  );
+  assertEquals(
+    HttpStatus.OK,
+    result.status,
+  );
+});
+
+Deno.test("Should return an empty array for an array target without dry run", async () => {
+  const body = { id: 289, brand: "acer" };
+  const pathPattern = "/api";
+  const ctx = {
+    req: {
+      url: "/api/laptops",
+      method: "PATCH",
+    },
+    pathPattern,
+    body,
+    query: {},
+  };
+  const result = await jsondb(
+    false,
+    processJsonOrContent,
+    () => checkJsonDb(jsonDbTestPath),
+    jsonDbTestCopyPath,
+  )(ctx);
+
+  assertEquals(
+    [],
+    result.resp?.response,
+  );
+  assertEquals(
+    HttpStatus.BAD_REQUEST,
+    result.status,
+  );
+});
+
+Deno.test("Should return null for a string target without dry run", async () => {
+  const body = "horror";
+  const pathPattern = "/api";
+  const ctx = {
+    req: {
+      url: "/api/color/dark",
+      method: "POST",
+    },
+    pathPattern,
+    body,
+    query: {},
+  };
+  const result = await jsondb(
+    false,
+    processJsonOrContent,
+    () => checkJsonDb(jsonDbTestPath),
+    jsonDbTestCopyPath,
+  )(ctx);
+
+  assertEquals(
+    null,
+    result.resp?.response,
+  );
+  assertEquals(
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    result.status,
   );
 });
 
