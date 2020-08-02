@@ -1,5 +1,4 @@
-import { pathToRegexp } from "./deps.js";
-import { serve } from "https://deno.land/std@0.50.0/http/server.ts";
+import { pathToRegexp, serve } from "./deps.js";
 import * as U from "./utils.js";
 
 const tryParsePath = ({ matcher, path, url }) => {
