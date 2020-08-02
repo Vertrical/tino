@@ -5,10 +5,12 @@ HTTP server for Deno with local JSON REST API for rapid prototyping.
 ## Install and Use
 
 1. Install Deno: https://deno.land/#installation
-2. Try it out: `$ deno run --allow-net --allow-read --allow-write https://raw.githubusercontent.com/Vertrical/json_server/develop/json_server.js`
-3. Open http://localhost:8000/api
+2. Try it out: `$ deno run --allow-net --allow-read --allow-write https://raw.githubusercontent.com/Vertrical/tino/develop/tino.js`
 
 Internally Tino uses `jsondb responder` which opens `/api` path for playing around. It uses `db.json` file by default as a database.
+
+1. To see it already, copy it from tests: `$ cp ./tests/jsondb.test.json ./db.json`
+2. Open http://localhost:8000/api
 
 ## Run tests
 
@@ -16,27 +18,40 @@ Run: `$ deno test`
 
 All tests are included in `./tests` directory.
 
-## Minimal configuration
+## Minimal configuration (custom endpoints)
 
 ```js
 // app.js
-import tino from "https://raw.githubusercontent.com/Vertrical/json_server/develop/json_server.js";
+import tino from "https://raw.githubusercontent.com/Vertrical/tino/develop/tino.js";
 const app = tino.create();
-app.get(() => ({ path: "/ping", resp: "pong" }));
-// Or
-app.get(() => ({ path: "/ping", resp: () => "pong" }));
-// Or
-app.get(() => ({ path: "/ping", resp: async () => "pong" }));
+const controller = () => ({ resp: "pong", status: 200 }) // must return { resp, status? }
+app.get(() => ({ path: "/ping", use: controller }));
 tino.listen({ app, port: 8000 });
+console.log(`Server running at 8000`);
 ```
 
 1. Now run the server: `$ deno run --allow-net app.js`
 2. Send a request: `$ http :8000/ping` (HTTPie, curl, Postman, etc.)
 3. Receive `"pong"` as `text/plain` content type
 
-Tino application `app` supports following HTTP methods: GET, POST, PUT, PATCH, DELETE. Method names are lowercased.
+### Further configurations
+```js
+// Shorter: Use `resp` directly with status 200
+app.get(() => ({ path: "/ping", resp: "pong" }));
+
+// `resp` can be anything:
+app.get(() => ({ path: "/ping", use: () => ({ resp: () => "pong", status: 200 }) }));
+
+// Or
+app.get(() => ({ path: "/ping-async", use: () => ({ resp: async () => "pong", status: 201 }) }));
+app.not_found(() => ({ resp: "Oops" }));
+```
+
+Tino application `app` supports following HTTP methods: GET, POST, PUT, PATCH, DELETE. Method names are lowercased. Also there is `not_found` for status 404, so you can define custom response.
 
 `resp` can be anything, but it's a controller if it's a function. If it's a function, it will be called no matter if it's async or not. If it's an object (or returned as an object), content type will be `application/json`.
+
+The only requirement for `use` is that it must return `{ resp, status? }` object.
 
 ## `resp` definition
 
@@ -47,11 +62,11 @@ If defined as a function, `resp` receives following parameters:
 3. `query` - query string like `?p=1&q=2`
 4. `custom params` - anything else provided to method definition, except `path`, `resp` or `use`
 
-Basically you can test this with following definition:
+Basically you can test this with following have-it-all definition:
 ```js
 // $ http POST :8000/post/123?q=1 foo=bar
 app.post(() => ({
-  path: "/post/:id?",
+  path: "/post/:id", // or optional with :id?
   resp: ({ body, params, query, something }) => ({ body, params, query, something }),
   something: "else",
 }));
@@ -75,15 +90,15 @@ Response received should be:
 
 ## Using `jsondb` responder
 
-This responder is just a small package which handles CRUD operations on `db.json` file.
+This responder is just a small package included by default in Tino which handles CRUD operations on `db.json` file.
 
 Each response is wrapped with `response` parent, like:
 ```js
-// GET /api/laptops/1234
+// GET /api/users/1234
 {
   "response": {
     "id": "1234",
-    "brand": "apple"
+    "name": "Smith"
   }
 }
 ```
@@ -96,35 +111,14 @@ Each response is wrapped with `response` parent, like:
 import tino, { jsondb } from "tino.js";
 const app = tino.create();
 app.any(() => ({ path: "/api", use: jsondb() })); // notice the ()
+// If you want some other namespace
+app.any(() => ({ path: "/awesome-api", use: jsondb() }));
 tino.listen({ app });
 ```
 (Please note that `jsondb` must be called. This is because it is a higher order function.)
 
 `any` is needed because we want ANY HTTP METHOD to be used with this.
 
-## Examples
-
-```js
-// Custom endpoints:
-
-// Define parameters:
-// :8000/muesli/choco
-app.get(() => ({ path: "/muesli/:type", resp: ({ params }) => params.type }));
-// $ "choco"
-// text/plain
-
-// Access query params:
-// :8000/muesli/fruit?quantity=3
-app.get(() => ({ path: "/muesli/:type", resp: ({ params, query }) => ({ params, query }) }));
-// $ { "params": { "type": "fruit" }, "query": { "quantity": "3" }}
-// application/json
-
-
-// POST :8000/ingredients name=quinoa
-app.post(() => ({ path: "/ingredients", resp: ({ body }) => body }))
-// $ "quinoa"
-// text/plain
-```
 ### JSON REST API
 Test JSON file is included in [tests/jsondb.test.json](https://github.com/Vertrical/json_server/blob/develop/tests/jsondb.test.json). You need to create your `./db.json` file to operate agains it.
 
@@ -148,6 +142,7 @@ $ http PATCH :8000/api/laptops/789 brand=asus
 # DELETE an item:
 $ http DELETE :8000/api/laptops/789
 ```
+You can see many examples in ./tests/requests.http file.
 
 ### Customize API
 
@@ -158,13 +153,27 @@ app.any(() => ({ path: "/myapi", use: jsondb() }));
 // you can optionally "close" /api
 app.any(() => ({ path: "/api", status: 404 }));
 ```
-Remember that you need to create file `db.json` yourself. If not, the response will be empty object `{}` and status 404 by default.
+Remember that you need to create file `db.json` yourself. If not, the response will be empty and status 404.
 
-### When to use `resp` and `use`?
+### When to use `use` and `resp`?
 
-Difference between `resp` and `use` is that `use` must return `{ resp, status? }` (status is optional). Response again can be anything - if it's a function, it will be executed no matter if it's async or not. 
+`use` is recommended way to define your controllers. It uses `resp` as return type and can be anything, objects, primitives and functions. `resp` can be used directly but then `status` is always 200. It's just syntactic sugar so you can write shorter definitions if you don't care about statuses. For example these two definitions are the same:
+```js
+app.get(() => ({ path: "/ping", use: () => ({ resp: "pong", status: 200 }) }));
+app.get(() => ({ path: "/ping", resp: "pong" }));
+```
 
-This way you can write your own responders easily using `use`.
+Use `use` (a responder) when you want:
+1. complete control over HTTP statuses
+2. extend Tino's functionality
+3. create namespaces
+
+For example you want a namespace `/swapi` to handle Star Wars API, so you can make functionality for this and use it with Tino:
+```js
+import swapi from "https://some.location.com/swapi.js";
+app.any(() => ({ path: "/swapi", use: swapi }));
+```
+The only requirement is that it returns `{ resp, status? }` at the end, so it's your responsibility to handle HTTP statuses with your internal logic.
 
 ## CLI and options for Tino and jsondb
 
