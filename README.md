@@ -142,7 +142,7 @@ $ http PATCH :8000/api/laptops/789 brand=asus
 # DELETE an item:
 $ http DELETE :8000/api/laptops/789
 ```
-You can see many examples in ./tests/requests.http file.
+You can see many examples in [tests/requests.http](https://github.com/Vertrical/tino/blob/develop/tests/requests.http) file.
 
 ### Customize API
 
