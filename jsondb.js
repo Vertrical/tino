@@ -108,7 +108,7 @@ export const methodPost = ({ ...props }) => {
         obj: json,
       }),
       responseData: body,
-      status: HttpStatus.OK,
+      status: HttpStatus.CREATED,
     };
   }
 

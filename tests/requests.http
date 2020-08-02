@@ -1,0 +1,71 @@
+#
+# https://github.com/Huachao/vscode-restclient
+#
+
+http://localhost:8000/api
+
+###
+http://localhost:8000/api/laptops
+
+###
+http://localhost:8000/api/laptops/123
+
+###
+http://localhost:8000/api/laptops/0
+
+###
+http://localhost:8000/api/laptops/0/byindex
+
+###
+http://localhost:8000/api/laptops/none123
+
+###
+http://localhost:8000/api/blabla
+
+###
+http://localhost:8000/api/color
+
+###
+http://localhost:8000/api/color/dark
+
+###
+http://localhost:8000/api/genres
+
+###
+http://localhost:8000/api/genres/0
+
+###
+http://localhost:8000/api/genres/0/byindex
+
+###
+POST http://localhost:8000/api/laptops
+
+{
+    "name": "sample",
+    "time": "Wed, 02 Aug 2020 12:13:50 GMT"
+}
+
+### Unprocessable Entity
+POST http://localhost:8000/api/laptops/123
+
+{
+    "name": "sample",
+    "time": "Wed, 21 Oct 2015 18:27:50 GMT"
+}
+
+###
+PUT http://localhost:8000/api/laptops
+
+{
+    "slug": "sample-slug"
+}
+
+###
+PATCH http://localhost:8000/api/laptops/123
+
+{
+    "brand": "asus"
+}
+
+###
+DELETE http://localhost:8000/api/laptops/123
