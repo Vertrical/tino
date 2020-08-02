@@ -120,7 +120,7 @@ tino.listen({ app });
 `any` is needed because we want ANY HTTP METHOD to be used with this.
 
 ### JSON REST API
-Test JSON file is included in [tests/jsondb.test.json](https://github.com/Vertrical/json_server/blob/develop/tests/jsondb.test.json). You need to create your `./db.json` file to operate agains it.
+Test JSON file is included in [tests/jsondb.test.json](https://github.com/Vertrical/tino/blob/develop/tests/jsondb.test.json). You need to create your `./db.json` file to operate agains it.
 
 Having the content same as in jsondb.test.json file, we would have following requests returning respective responses:
 ```sh
