@@ -666,7 +666,7 @@ Deno.test("Returns right content type for an object", async () => {
     ContentType.JSON,
   );
 });
-    
+
 Deno.test("Returns right content type for a string", async () => {
   const app = tino.create();
   const req = {

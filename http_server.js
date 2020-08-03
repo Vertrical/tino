@@ -23,7 +23,7 @@ const prepareContext = ({ req, state, bodyReader }) => {
     params: {},
     query: {},
   };
-  const ctx = { req, state, bodyReader }
+  const ctx = { req, state, bodyReader };
   for (const [pathPattern, pathArgs] of state) {
     const matchedPath = tryParsePath({
       matcher: pathToRegexp.match,
