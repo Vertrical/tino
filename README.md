@@ -42,7 +42,7 @@ app.get(() => ({ path: "/ping", resp: "pong" }));
 // `resp` can be anything:
 app.get(() => ({ path: "/ping", use: () => ({ resp: () => "pong", status: 200 }) }));
 
-// Or
+// Or (use: can also be async)
 app.get(() => ({ path: "/ping-async", use: () => ({ resp: async () => "pong", status: 201 }) }));
 app.not_found(() => ({ resp: "Oops" }));
 ```
@@ -51,7 +51,7 @@ Tino application `app` supports following HTTP methods: GET, POST, PUT, PATCH, D
 
 `resp` can be anything, but it's a controller if it's a function. If it's a function, it will be called no matter if it's async or not. If it's an object (or returned as an object), content type will be `application/json`.
 
-The only requirement for `use` is that it must return `{ resp, status?, type? }` object.
+The only requirement for `use` is that it must return `{ resp, status?, type? }` object. It can also be defined as async function.
 
 ## `resp` definition
 
