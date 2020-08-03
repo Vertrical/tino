@@ -216,6 +216,7 @@ tino.listen({ app, port: 7777 });
 
 ## To-do list
 
+- [ ] Write TypeScript support (depends on https://github.com/microsoft/TypeScript/issues/38510)
 - [ ] Hooks/Middleware support
 - [ ] Same content type for multiple routes
 - [ ] Cookies support
