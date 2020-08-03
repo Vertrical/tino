@@ -24,7 +24,7 @@ All tests are included in `./tests` directory.
 // app.js
 import tino from "https://raw.githubusercontent.com/Vertrical/tino/develop/tino.js";
 const app = tino.create();
-const controller = () => ({ resp: "pong", status: 200 }) // must return { resp, status? }
+const controller = () => ({ resp: "pong", status: 200 }) // must return { resp, status?, type? }
 app.get(() => ({ path: "/ping", use: controller }));
 tino.listen({ app, port: 8000 });
 console.log(`Server running at 8000`);
@@ -51,9 +51,11 @@ Tino application `app` supports following HTTP methods: GET, POST, PUT, PATCH, D
 
 `resp` can be anything, but it's a controller if it's a function. If it's a function, it will be called no matter if it's async or not. If it's an object (or returned as an object), content type will be `application/json`.
 
-The only requirement for `use` is that it must return `{ resp, status? }` object.
+The only requirement for `use` is that it must return `{ resp, status?, type? }` object.
 
 ## `resp` definition
+
+### Parameters
 
 If defined as a function, `resp` receives following parameters:
 
@@ -72,6 +74,15 @@ app.post(() => ({
 }));
 ```
 
+### Return type (Content type)
+
+When you define `resp` controller, you can define content type such as `text/html`:
+```js
+const use = () => ({ resp: "<p>Works!</p>", status: 200, type: 'text/html' });
+app.get(() => ({ path: "/ping", use  }));
+```
+
+### Response
 Response received should be:
 ```json
 {
@@ -173,7 +184,7 @@ For example you want a namespace `/swapi` to handle Star Wars API, so you can ma
 import swapi from "https://some.location.com/swapi.js";
 app.any(() => ({ path: "/swapi", use: swapi }));
 ```
-The only requirement is that it returns `{ resp, status? }` at the end, so it's your responsibility to handle HTTP statuses with your internal logic.
+The only requirement is that it returns `{ resp, status?, type? }` at the end, so it's your responsibility to handle HTTP statuses and types with your internal logic.
 
 ## CLI and options for Tino and jsondb
 
@@ -202,3 +213,10 @@ Similarly, in your code you can pass it to `listen` method:
 // if you omit port, it will be 8000
 tino.listen({ app, port: 7777 });
 ```
+
+## To-do list
+
+- [ ] Hooks/Middleware support
+- [ ] Same content type for multiple routes
+- [ ] Cookies support
+- [ ] GraphQL responder for local prototyping (like jsondb)
