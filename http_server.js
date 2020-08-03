@@ -100,6 +100,7 @@ export const resolveResponse = async ({
   resp: responseOrHandler,
   params,
   status,
+  type,
   ctx,
   ...props
 }) => {
@@ -112,15 +113,15 @@ export const resolveResponse = async ({
       : responseOrHandler;
   }
   if (status) {
-    return { resp, status };
+    return { resp, status, type };
   }
   if (!resp) {
     return { resp, status: 404 };
   }
-  return { resp };
+  return { resp, type };
 };
 
-export const createResponder = async ({ resp, status, ...props }) => {
+export const createResponder = async ({ resp, status, type, ...props }) => {
   const responderObject = { body: resp };
   if (U.isAsyncFunction(resp)) {
     const _resp = await resp();
@@ -137,6 +138,10 @@ export const createResponder = async ({ resp, status, ...props }) => {
     responderObject.status = status;
   }
   responderObject.headers = U.cond([
+    {
+      when: () => !U.isNil(type),
+      use: new Headers({ "content-type": type }),
+    },
     {
       when: U.isObject || U.isArray,
       use: new Headers({ "content-type": ContentType.JSON }),
@@ -174,6 +179,7 @@ export const HttpStatus = {
 export const ContentType = {
   PLAIN_TEXT: "text/plain",
   JSON: "application/json",
+  HTML: "text/html",
 };
 
 export const processRequest = U.asyncCompose(
