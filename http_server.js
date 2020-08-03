@@ -1,4 +1,5 @@
 import { pathToRegexp, serve } from "./deps.js";
+
 import * as U from "./utils.js";
 
 const tryParsePath = ({ matcher, path, url }) => {
@@ -99,6 +100,7 @@ export const resolveResponse = async ({
   resp: responseOrHandler,
   params,
   status,
+  type,
   ctx,
   ...props
 }) => {
@@ -111,15 +113,15 @@ export const resolveResponse = async ({
       : responseOrHandler;
   }
   if (status) {
-    return { resp, status };
+    return { resp, status, type };
   }
   if (!resp) {
     return { resp, status: 404 };
   }
-  return { resp };
+  return { resp, type };
 };
 
-export const createResponder = async ({ resp, status, ...props }) => {
+export const createResponder = async ({ resp, status, type, ...props }) => {
   const responderObject = { body: resp };
   if (U.isAsyncFunction(resp)) {
     const _resp = await resp();
@@ -132,14 +134,26 @@ export const createResponder = async ({ resp, status, ...props }) => {
     const _resp = resp();
     responderObject.body = _resp;
   }
-  if (U.isObject(responderObject.body) || U.isArray(responderObject.body)) {
-    responderObject.body = JSON.stringify(responderObject.body);
-    responderObject.headers = new Headers({
-      "content-type": "application/json",
-    });
-  }
   if (status) {
     responderObject.status = status;
+  }
+  responderObject.headers = U.cond([
+    {
+      when: () => !U.isNil(type),
+      use: new Headers({ "content-type": type }),
+    },
+    {
+      when: U.isObject,
+      use: new Headers({ "content-type": ContentType.JSON }),
+    },
+    { when: U.isArray, use: new Headers({ "content-type": ContentType.JSON }) },
+    {
+      when: () => true,
+      use: new Headers({ "content-type": ContentType.PLAIN_TEXT }),
+    },
+  ])(responderObject.body);
+  if (U.isObject(responderObject.body) || U.isArray(responderObject.body)) {
+    responderObject.body = JSON.stringify(responderObject.body);
   }
   return responderObject;
 };
@@ -161,6 +175,11 @@ export const HttpStatus = {
   BAD_REQUEST: 400,
   NOT_FOUND: 404,
   UNPROCESSABLE_ENTITY: 422,
+};
+
+export const ContentType = {
+  PLAIN_TEXT: "text/plain",
+  JSON: "application/json",
 };
 
 export const processRequest = U.asyncCompose(
