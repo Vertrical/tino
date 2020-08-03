@@ -143,10 +143,9 @@ export const createResponder = async ({ resp, status, type, ...props }) => {
       use: new Headers({ "content-type": type }),
     },
     {
-      when: U.isObject,
+      when: U.isObject || U.isArray,
       use: new Headers({ "content-type": ContentType.JSON }),
     },
-    { when: U.isArray, use: new Headers({ "content-type": ContentType.JSON }) },
     {
       when: () => true,
       use: new Headers({ "content-type": ContentType.PLAIN_TEXT }),
