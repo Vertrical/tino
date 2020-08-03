@@ -647,6 +647,46 @@ Deno.test("Allows passing multiple method handlers for the same path", async () 
   );
 });
 
+Deno.test("Returns right content type for an object", async () => {
+  const app = tino.create();
+  const req = {
+    url: "/ping",
+    method: "GET",
+  };
+  app.get(() => ({
+    path: "/ping",
+    use: { resp: { text: "pong" }, status: HttpStatus.OK },
+  }));
+  const state = app.getState();
+  const [res, _] = await createCustomEndpointResponse(
+    { req, state, resReader: (_) => _ },
+  );
+  assertEquals(
+    res?.headers.get("content-type"),
+    ContentType.JSON,
+  );
+});
+    
+Deno.test("Returns right content type for a string", async () => {
+  const app = tino.create();
+  const req = {
+    url: "/ping",
+    method: "GET",
+  };
+  app.get(() => ({
+    path: "/ping",
+    use: { resp: "pong", status: HttpStatus.OK },
+  }));
+  const state = app.getState();
+  const [res, _] = await createCustomEndpointResponse(
+    { req, state, resReader: (_) => _ },
+  );
+  assertEquals(
+    res?.headers.get("content-type"),
+    ContentType.PLAIN_TEXT,
+  );
+});
+
 Deno.test("Should set content type to text/html", async () => {
   const app = tino.create();
   const req = {
