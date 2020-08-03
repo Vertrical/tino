@@ -49,9 +49,9 @@ app.not_found(() => ({ resp: "Oops" }));
 
 Tino application `app` supports following HTTP methods: GET, POST, PUT, PATCH, DELETE. Method names are lowercased. Also there is `not_found` for status 404, so you can define custom response.
 
-`resp` can be anything, but it's a controller if it's a function. If it's a function, it will be called no matter if it's async or not. If it's an object (or returned as an object), content type will be `application/json`.
+`resp` can be anything, but if it's a function it will return it's result of execution, and it will be called no matter if it's async or not. If it's an object (or returned as an object), content type will be `application/json`.
 
-The only requirement for `use` is that it must return `{ resp, status?, type? }` object. It can also be defined as async function.
+The only requirement for controller `use` is that it must return `{ resp, status?, type? }` object. It can also be defined as async function.
 
 ## `resp` definition
 
