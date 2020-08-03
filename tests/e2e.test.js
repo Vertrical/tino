@@ -653,7 +653,10 @@ Deno.test("Returns right content type for an object", async () => {
     url: "/ping",
     method: "GET",
   };
-  app.get(() => ({ path: "/ping", use: { resp: { text: "pong" }, status: HttpStatus.OK } }));
+  app.get(() => ({
+    path: "/ping",
+    use: { resp: { text: "pong" }, status: HttpStatus.OK },
+  }));
   const state = app.getState();
   const [res, _] = await createCustomEndpointResponse(
     { req, state, resReader: (_) => _ },
@@ -670,7 +673,10 @@ Deno.test("Returns right content type for a string", async () => {
     url: "/ping",
     method: "GET",
   };
-  app.get(() => ({ path: "/ping", use: { resp: "pong", status: HttpStatus.OK } }));
+  app.get(() => ({
+    path: "/ping",
+    use: { resp: "pong", status: HttpStatus.OK },
+  }));
   const state = app.getState();
   const [res, _] = await createCustomEndpointResponse(
     { req, state, resReader: (_) => _ },
