@@ -23,6 +23,7 @@ const prepareContext = ({ req, state, bodyReader }) => {
     params: {},
     query: {},
   };
+  const ctx = { req, state, bodyReader }
   for (const [pathPattern, pathArgs] of state) {
     const matchedPath = tryParsePath({
       matcher: pathToRegexp.match,
@@ -30,6 +31,8 @@ const prepareContext = ({ req, state, bodyReader }) => {
       url: baseUrl,
     });
     if (U.isObject(matchedPath)) {
+      ctx.matchedPath = matchedPath;
+      ctx.pathPattern = pathPattern;
       responseDefinition.params = { ...matchedPath.params };
       const _method = req.method.toLowerCase();
       const _hasMethod = pathArgs[_method] || pathArgs["any"];
@@ -46,14 +49,8 @@ const prepareContext = ({ req, state, bodyReader }) => {
       Object.assign(responseDefinition.query, { [queryName]: queryValue });
     }
   }
-  return { ctx: { req, state, bodyReader }, ...responseDefinition };
+  return { ctx, ...responseDefinition };
 };
-
-const _pickUse = U.compose(
-  U.path(["use"]),
-  ([head, ..._tail]) => head,
-  Object.values,
-);
 
 const execMaybeHandler = async ({ maybeFunction, ctx }) => {
   let res;
@@ -68,20 +65,11 @@ const execMaybeHandler = async ({ maybeFunction, ctx }) => {
 };
 
 const handleUse = async ({ ctx, ...responseDefinition }) => {
-  const url = ctx.req.url;
-  for (const [pathPattern, pathArgs] of ctx.state) {
-    if (`/${url.split("/")[1]}` === pathPattern) {
-      const _useHandler = _pickUse(pathArgs);
-      if (_useHandler) {
-        const handlerCallResult = await execMaybeHandler({
-          maybeFunction: _useHandler,
-          ctx: { ...ctx, pathPattern, ...responseDefinition },
-        });
-        Object.assign(responseDefinition, handlerCallResult);
-        break;
-      }
-    }
-  }
+  const handlerCallResult = await execMaybeHandler({
+    maybeFunction: responseDefinition.use,
+    ctx: { ...ctx, ...responseDefinition },
+  });
+  Object.assign(responseDefinition, handlerCallResult);
   return { ctx, ...responseDefinition };
 };
 
