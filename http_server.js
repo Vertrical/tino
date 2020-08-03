@@ -1,4 +1,5 @@
 import { pathToRegexp, serve } from "./deps.js";
+
 import * as U from "./utils.js";
 
 const tryParsePath = ({ matcher, path, url }) => {
@@ -134,13 +135,15 @@ export const createResponder = async ({ resp, status, ...props }) => {
   }
   if (U.isObject(responderObject.body) || U.isArray(responderObject.body)) {
     responderObject.body = JSON.stringify(responderObject.body);
-    responderObject.headers = new Headers({
-      "content-type": "application/json",
-    });
   }
   if (status) {
     responderObject.status = status;
   }
+  responderObject.headers = U.cond([
+    { when: U.isObject, use: new Headers({ "content-type": ContentType.JSON }) },
+    { when: U.isArray, use: new Headers({ "content-type": ContentType.JSON }) },
+    { when: () => true, use: new Headers({ "content-type": ContentType.PLAIN_TEXT }) },
+  ])(responderObject.body);
   return responderObject;
 };
 
@@ -161,6 +164,11 @@ export const HttpStatus = {
   BAD_REQUEST: 400,
   NOT_FOUND: 404,
   UNPROCESSABLE_ENTITY: 422,
+};
+
+export const ContentType = {
+  PLAIN_TEXT: "text/plain",
+  JSON: "application/json",
 };
 
 export const processRequest = U.asyncCompose(
