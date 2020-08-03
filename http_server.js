@@ -180,6 +180,7 @@ export const HttpStatus = {
 export const ContentType = {
   PLAIN_TEXT: "text/plain",
   JSON: "application/json",
+  HTML: "text/html",
 };
 
 export const processRequest = U.asyncCompose(
