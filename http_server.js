@@ -140,15 +140,15 @@ export const createResponder = async ({ resp, status, type, ...props }) => {
   responderObject.headers = U.cond([
     {
       when: () => !U.isNil(type),
-      use: new Headers({ "content-type": type }),
+      use: new Headers({ "Content-Type": type }),
     },
     {
       when: U.isObject || U.isArray,
-      use: new Headers({ "content-type": ContentType.JSON }),
+      use: new Headers({ "Content-Type": ContentType.JSON }),
     },
     {
       when: () => true,
-      use: new Headers({ "content-type": ContentType.PLAIN_TEXT }),
+      use: new Headers({ "Content-Type": ContentType.PLAIN_TEXT }),
     },
   ])(responderObject.body);
   if (U.isObject(responderObject.body) || U.isArray(responderObject.body)) {
