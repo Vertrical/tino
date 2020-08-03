@@ -3,7 +3,7 @@ import jsondb, {
   checkJsonDb,
   processJsonOrContent,
 } from "../jsondb.js";
-import { HttpStatus, processRequest } from "../http_server.js";
+import { HttpStatus, processRequest, ContentType } from "../http_server.js";
 import tino from "../tino.js";
 import * as U from "../utils.js";
 
@@ -644,6 +644,40 @@ Deno.test("Allows passing multiple method handlers for the same path", async () 
   assertEquals(
     "pong",
     resBody2,
+  );
+});
+
+Deno.test("Returns right content type for an object", async () => {
+  const app = tino.create();
+  const req = {
+    url: "/ping",
+    method: "GET",
+  };
+  app.get(() => ({ path: "/ping", use: { resp: { text: "pong" }, status: HttpStatus.OK } }));
+  const state = app.getState();
+  const [res, _] = await createCustomEndpointResponse(
+    { req, state, resReader: (_) => _ },
+  );
+  assertEquals(
+    res?.headers.get("content-type"),
+    ContentType.JSON,
+  );
+});
+
+Deno.test("Returns right content type for a string", async () => {
+  const app = tino.create();
+  const req = {
+    url: "/ping",
+    method: "GET",
+  };
+  app.get(() => ({ path: "/ping", use: { resp: "pong", status: HttpStatus.OK } }));
+  const state = app.getState();
+  const [res, _] = await createCustomEndpointResponse(
+    { req, state, resReader: (_) => _ },
+  );
+  assertEquals(
+    res?.headers.get("content-type"),
+    ContentType.PLAIN_TEXT,
   );
 });
 

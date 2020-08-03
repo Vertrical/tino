@@ -133,9 +133,6 @@ export const createResponder = async ({ resp, status, ...props }) => {
     const _resp = resp();
     responderObject.body = _resp;
   }
-  if (U.isObject(responderObject.body) || U.isArray(responderObject.body)) {
-    responderObject.body = JSON.stringify(responderObject.body);
-  }
   if (status) {
     responderObject.status = status;
   }
@@ -144,6 +141,9 @@ export const createResponder = async ({ resp, status, ...props }) => {
     { when: U.isArray, use: new Headers({ "content-type": ContentType.JSON }) },
     { when: () => true, use: new Headers({ "content-type": ContentType.PLAIN_TEXT }) },
   ])(responderObject.body);
+  if (U.isObject(responderObject.body) || U.isArray(responderObject.body)) {
+    responderObject.body = JSON.stringify(responderObject.body);
+  }
   return responderObject;
 };
 
