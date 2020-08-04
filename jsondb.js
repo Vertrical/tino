@@ -52,8 +52,7 @@ export const tryRestful = ({
       data: maybeNextItem,
       json,
       next: true,
-      restPathItems,
-      ...props,
+      ...{ ...props, restPathItems },
     });
   } else {
     const data = maybeNextItem || undefined;
