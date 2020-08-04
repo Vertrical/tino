@@ -46,6 +46,13 @@ const resolveConfig = (configurator) => {
   return { ...configs };
 };
 
+const resolveComposed = (maybeComposed) => {
+  if (typeof maybeComposed === "function") {
+    return () => maybeComposed();
+  }
+  return () => maybeComposed;
+}
+
 const useDispatch = ({ dispatch = dispatchHandler, ...configs }) => ({
   dispatch,
   ...configs,
@@ -62,7 +69,7 @@ const updateNotFoundState = () =>
   };
 
 const methodHandler = (method) =>
-  U.compose(updateState(method), useDispatch, resolveConfig);
+  U.compose(updateState(method), useDispatch, resolveConfig, resolveComposed);
 
 const notFoundHandler = () =>
   U.compose(updateNotFoundState(), useDispatch, resolveConfig);
