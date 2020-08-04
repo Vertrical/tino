@@ -25,18 +25,21 @@ const prepareContext = ({ req, state, bodyReader }) => {
   };
   const ctx = { req, state, bodyReader };
   for (const [pathPattern, pathArgs] of state) {
+    const _method = req.method.toLowerCase();
+    const _hasMethod = pathArgs[_method] || pathArgs["any"];
+    const isRootPath = _hasMethod
+      ? pathArgs[_method]?.root || pathArgs["any"]?.root
+      : false;
     const matchedPath = tryParsePath({
       matcher: pathToRegexp.match,
       path: pathPattern,
       url: baseUrl,
     });
-    if (U.isObject(matchedPath)) {
+    if (U.isObject(matchedPath) || isRootPath) {
       ctx.matchedPath = matchedPath;
       ctx.pathPattern = pathPattern;
       responseDefinition.params = { ...matchedPath.params };
-      const _method = req.method.toLowerCase();
-      const _hasMethod = pathArgs[_method] || pathArgs["any"];
-      if (U.has("path", matchedPath) && _hasMethod) {
+      if ((U.has("path", matchedPath) || isRootPath) && _hasMethod) {
         const endpointArgs = pathArgs[_method] || pathArgs["any"];
         Object.assign(responseDefinition, endpointArgs);
         break;
