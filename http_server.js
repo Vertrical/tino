@@ -75,11 +75,13 @@ const handleUse = async ({ ctx, ...responseDefinition }) => {
 
 const handleNotFound = ({ ctx, ...responseDefinition }) => {
   if (ctx.state.has(404) && !responseDefinition.resp) {
-    return {
+    const { resp, type } = ctx.state.get(404);
+    const res = {
       ...responseDefinition,
       status: 404,
       resp: ctx.state.get(404).resp,
     };
+    return type ? Object.assign(res, { type }) : res;
   }
   return { ctx, ...responseDefinition };
 };

@@ -21,12 +21,12 @@ const getState = () => {
   return () => state;
 };
 
-const setState = (path, { method, resp, ...props }) => {
+const setState = (path, { method, ...props }) => {
   if (!method && props.status) {
-    state.set(props.status, { resp, ...U.dissoc("status", props) });
+    state.set(props.status, { ...U.dissoc("status", props) });
   } else {
     const currentDefinition = state.get(path);
-    const pathDefinition = { [method]: { resp, ...props } };
+    const pathDefinition = { [method]: { ...props } };
 
     if (!U.isNil(currentDefinition)) {
       state.set(path, { ...currentDefinition, ...pathDefinition });
@@ -37,8 +37,8 @@ const setState = (path, { method, resp, ...props }) => {
   return state;
 };
 
-const dispatchHandler = (path, { method, resp, ...props }) => {
-  setState(path, { method, resp, ...props });
+const dispatchHandler = (path, { method, ...props }) => {
+  setState(path, { method, ...props });
 };
 
 const resolveConfig = (configurator) => {
@@ -52,13 +52,13 @@ const useDispatch = ({ dispatch = dispatchHandler, ...configs }) => ({
 });
 
 const updateState = (method) =>
-  ({ path, resp, dispatch, ...props }) => {
-    dispatch(path, { method, resp, ...props });
+  ({ path, dispatch, ...props }) => {
+    dispatch(path, { method, ...props });
   };
 
 const updateNotFoundState = () =>
-  ({ path, resp, dispatch }) => {
-    dispatch(path, { status: 404, resp });
+  ({ path, dispatch, ...props }) => {
+    dispatch(path, { status: 404, ...props });
   };
 
 const methodHandler = (method) =>
