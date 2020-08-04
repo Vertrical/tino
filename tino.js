@@ -51,7 +51,7 @@ const resolveComposed = (maybeComposed) => {
     return () => maybeComposed();
   }
   return () => maybeComposed;
-}
+};
 
 const useDispatch = ({ dispatch = dispatchHandler, ...configs }) => ({
   dispatch,
