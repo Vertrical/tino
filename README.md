@@ -164,7 +164,23 @@ Boom
 ```
 Note: Whatever you want to be returned from middlewares to your controller, you should propagate these props through the chain. (As seen above with `...props` for example)
 
-## Using `jsondb` responder
+## Responders
+
+In Tino responders are your implementations of custom APIs which don't rely on paths pattern matching.
+
+You define a responder by adding `root: true` to your endpoint definition.
+
+For example:
+```js
+import myAwesomeAPI, { v2 } from "somewhere";
+app.any(() => ({ path: "/awesome-api", use: myAwesomeAPI, root: true })); // <-- Notice the `root: true` part
+app.any(() => ({ path: "/awesome-api/v2", use: v2, root: true }));
+```
+Setting the `root` part is because we will match here only by `startsWith` against your request, disregarding any parameter matching.
+
+Example of a responder is `jsondb` which comes integrated with Tino and is located in [jsondb.js](https://github.com/Vertrical/tino/blob/develop/jsondb.js) file.
+
+### Using `jsondb` responder
 
 This responder is just a small package included by default in Tino which handles CRUD operations on `db.json` file.
 

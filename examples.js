@@ -4,6 +4,7 @@ const app = tino.create();
 // Basic and preferred
 const use = (props) => ({ resp: ({ props }) });
 app.get(() => ({ path: "/ping", use }));
+app.get(() => ({ path: "/ping/:id/:param/:type", use }));
 
 // Very basic (status 200 is default)
 app.get(() => ({ path: "/ping-simple", resp: "pong-simple" }));
