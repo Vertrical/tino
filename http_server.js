@@ -59,7 +59,9 @@ const prepareContext = ({ req, state, bodyReader }) => {
 
 const controllerUseHandler = async ({ maybeFunction, ctx }) => {
   let res;
+  const { method, url } = ctx.req;
   const shakeCtx = U.dissoc('req', U.dissoc('state', ctx));
+  shakeCtx.req = { method, url };
   if (U.isAsyncFunction(maybeFunction)) {
     res = await maybeFunction({ ...shakeCtx });
   } else {
