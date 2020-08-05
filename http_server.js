@@ -35,14 +35,16 @@ const prepareContext = ({ req, state, bodyReader }) => {
       path: pathPattern,
       url: baseUrl,
     });
-    if (U.isObject(matchedPath) || isRootPath) {
+    if (U.isObject(matchedPath) || isRootPath && url.startsWith(pathPattern)) {
       ctx.matchedPath = matchedPath;
       ctx.pathPattern = pathPattern;
       responseDefinition.params = { ...matchedPath.params };
       if ((U.has("path", matchedPath) || isRootPath) && _hasMethod) {
         const endpointArgs = pathArgs[_method] || pathArgs["any"];
         Object.assign(responseDefinition, endpointArgs);
-        break;
+        if (!isRootPath) {
+          break;
+        }
       }
     }
   }
