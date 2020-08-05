@@ -16,6 +16,7 @@ const getState = () => {
           () => false,
         ),
       ),
+      root: true,
     },
   });
   return () => state;
