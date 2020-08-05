@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
-import { processRequest } from "../http_server.js";
+import { processRequest, tryComposedMiddlewares } from "../http_server.js";
+import { withMiddlewares } from "../tino.js";
 
 Deno.test("http_server GET", async () => {
   let req = {
@@ -23,4 +24,29 @@ Deno.test("http_server POST", async () => {
   const bodyReader = async () => ({ to: "Santa" });
   const res = await processRequest({ req, state, bodyReader });
   assertEquals(JSON.stringify({ to: "Santa" }), res.body);
+});
+
+Deno.test("tryComposedMiddlewares", async () => {
+  const ctx = {};
+  const query = {};
+  const params = {};
+  const status = 203;
+  const middlewaresResult = () => ({ isUser: true, isAdmin: false, status });
+  const responder = () => {};
+  const use = { middlewaresResult, responder };
+  const withMiddlewaresResult = await tryComposedMiddlewares(
+    { ctx, query, params, use },
+  );
+  assertEquals(
+    {
+      ctx: {},
+      query: {},
+      params: {},
+      use: responder,
+      isUser: true,
+      isAdmin: false,
+      status,
+    },
+    withMiddlewaresResult,
+  );
 });

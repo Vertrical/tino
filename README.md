@@ -53,33 +53,37 @@ Tino application `app` supports following HTTP methods: GET, POST, PUT, PATCH, D
 
 The only requirement for controller `use` is that it must return `{ resp, status?, type? }` object. It can also be defined as async function.
 
-## `resp` definition
+## Defining path parameters
 
-### Parameters
+Parameters are defined as `:param` in your path definition. Optionals are defined as `:param?`. Some examples:
+```js
+app.get(() => ({ path: "/user/:id", use: () => ({ resp: ({ params }) => params.id }));
+app.get(() => ({ path: "/notes/:id?", use: () => ({ resp: ({ params, notes }) => params.id ? [] : notes }));
+```
+
+## `props` definition
 
 If defined as a function, `resp` receives following parameters:
 
 1. `body` - body payload for POST, PUT or PATCH methods
 2. `params` - parameters from path definition, e.g. `/path/:id`
-3. `query` - query string like `?p=1&q=2`
+3. `query` - query object from string like `?p=1&q=2`
 4. `custom params` - anything else provided to method definition, except `path`, `resp` or `use`
+5. `matchedPath` - information about path regex
+6. `pathPattern` - information about path definition
+7. Any other parameters coming from middlewares
 
 Basically you can test this with following have-it-all definition:
 ```js
 // $ http POST :8000/post/123?q=1 foo=bar
+const composed = withMiddlewares(
+  () => ({ isAdmin: true }),
+);
 app.post(() => ({
   path: "/post/:id", // or optional with :id?
-  resp: ({ body, params, query, something }) => ({ body, params, query, something }),
+  use: composed((props) => ({ resp: { ...props } })),
   something: "else",
 }));
-```
-
-### Return type (Content type)
-
-When you define `resp` controller, you can define content type such as `text/html`:
-```js
-const use = () => ({ resp: "<p>Works!</p>", status: 200, type: 'text/html' });
-app.get(() => ({ path: "/ping", use  }));
 ```
 
 ### Response
@@ -89,15 +93,75 @@ Response received should be:
   "body": {
     "foo": "bar"
   },
+  "isAdmin": true,
+  "matchedPath": {
+    "index": 0,
+    "params": {
+      "id": "123"
+    },
+    "path": "/post/123"
+  },
   "params": {
     "id": "123"
   },
+  "pathPattern": "/post/:id",
   "query": {
     "q": "1"
   },
   "something": "else"
 }
 ```
+
+### Return type (Content type)
+
+When you define `resp`, you can define content type such as `text/html`:
+```js
+const use = () => ({ resp: "<p>Works!</p>", status: 200, type: 'text/html' });
+app.get(() => ({ path: "/ping", use  }));
+```
+
+## Middlewares
+
+Middlewares offer you way to extend response by injecting additional information to your controllers. In Tino it is done by async functional composition so your middlewares can be both sync and async. It is offered by `withMiddlewares` helper from `tino.js`.
+
+### Examples:
+
+1. Check if user is admin and inject database into your controller:
+```js
+import { withMiddlewares } from "tino.js";
+const auth = (props) => ({ isUser: true });
+const isAdmin = (props) => ({ isAdmin: false, ...props });
+const withDB = (props) => ({ coll: {}, ...props });
+const composed = withMiddlewares(auth, isAdmin, withDB);
+// Define your endpoint:
+const use = composed(({ isUser, isAdmin, coll }) => ({ resp: "Hello" }));
+app.get(() => ({ path: "/ping", use }));
+```
+
+2. Exit early depending on if a precondition hasn't been met (protect the router):
+
+It's similar to previous case only that if any of the middlewares throws an exception it will be used as end result of your controller, i.e. replace it.
+
+```js
+import { withMiddlewares } from "tino.js";
+const auth = (props) => { throw { resp: "Boom", status: 401 }; };
+const isAdmin = (props) => ({ isAdmin: false, ...props });
+const withDB = (props) => ({ coll: {}, ...props });
+const composed = withMiddlewares(auth, isAdmin, withDB);
+// Define your endpoint:
+const use = composed(({ isUser, isAdmin, coll }) => ({ resp: "Hello" }));
+app.get(() => ({ path: "/ping", use }));
+// HTTP Response headers and content: (if you call "localhost:{port}/ping)
+
+`
+HTTP/1.1 401 Unauthorized
+content-length: 4
+content-type: text/plain
+
+Boom
+`
+```
+Note: Whatever you want to be returned from middlewares to your controller, you should propagate these props through the chain. (As seen above with `...props` for example)
 
 ## Using `jsondb` responder
 
@@ -214,10 +278,12 @@ Similarly, in your code you can pass it to `listen` method:
 tino.listen({ app, port: 7777 });
 ```
 
+## Examples
+
+You can find maintained list of exampes in [examples.js](https://github.com/Vertrical/tino/blob/develop/examples.js) file.
+
 ## To-do list
 
 - [ ] Write TypeScript support (depends on https://github.com/microsoft/TypeScript/issues/38510)
-- [ ] Hooks/Middleware support
-- [ ] Same content type for multiple routes
 - [ ] Cookies support
 - [ ] GraphQL responder for local prototyping (like jsondb)

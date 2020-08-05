@@ -57,20 +57,21 @@ const prepareContext = ({ req, state, bodyReader }) => {
   return { ctx, ...responseDefinition };
 };
 
-const execMaybeHandler = async ({ maybeFunction, ctx }) => {
+const controllerUseHandler = async ({ maybeFunction, ctx }) => {
   let res;
+  const shakeCtx = U.dissoc('req', U.dissoc('state', ctx));
   if (U.isAsyncFunction(maybeFunction)) {
-    res = await maybeFunction({ ...ctx });
+    res = await maybeFunction({ ...shakeCtx });
   } else {
     res = U.isFunction(maybeFunction)
-      ? maybeFunction({ ...ctx })
+      ? maybeFunction({ ...shakeCtx })
       : maybeFunction;
   }
   return res;
 };
 
 const handleUse = async ({ ctx, ...responseDefinition }) => {
-  const handlerCallResult = await execMaybeHandler({
+  const handlerCallResult = await controllerUseHandler({
     maybeFunction: responseDefinition.use,
     ctx: { ...ctx, ...responseDefinition },
   });
@@ -116,7 +117,7 @@ export const resolveResponse = async ({
   return { resp, type };
 };
 
-export const createResponder = async ({ resp, status, type, ...props }) => {
+export const createResponder = async ({ resp, status, type }) => {
   const responderObject = { body: resp };
   if (U.isAsyncFunction(resp)) {
     const _resp = await resp();
@@ -177,12 +178,42 @@ export const ContentType = {
   HTML: "text/html",
 };
 
+export const tryComposedMiddlewares = async (
+  { ctx, ...responseDefinition },
+) => {
+  const middlewaresResult = U.path(
+    ["use", "middlewaresResult"],
+    responseDefinition,
+  );
+  if (!U.isFunction(middlewaresResult)) {
+    return { ctx, ...responseDefinition };
+  }
+  try {
+    const newProps = await responseDefinition.use.middlewaresResult(
+      { ctx, ...responseDefinition },
+    );
+    Object.assign(responseDefinition, { ...U.dissoc("ctx", newProps) });
+    responseDefinition.use = responseDefinition.use.responder;
+  } catch (e) {
+    if (!U.isObject(e) || !e.resp && !e.status) {
+      responseDefinition.use = () => ({ status: 500 });
+    }
+    const caughtResponder = { status: e.status, resp: e.resp };
+    if (U.isString(e.type)) {
+      caughtResponder.type = e.type;
+    }
+    responseDefinition.use = () => ({ ...caughtResponder });
+  }
+  return { ctx, ...responseDefinition };
+};
+
 export const processRequest = U.asyncCompose(
   createResponder,
   resolveResponse,
   handleNotFound,
   handleUse,
   resolveRequestBody,
+  tryComposedMiddlewares,
   prepareContext,
 );
 

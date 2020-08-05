@@ -11,6 +11,13 @@ export const asyncCompose = (...functions) =>
       Promise.resolve(input),
     );
 
+export const asyncPipe = (...functions) =>
+  (input) =>
+    functions.reduce(
+      (chain, func) => chain.then(func),
+      Promise.resolve(input),
+    );
+
 export const compose = (...fns) =>
   (data) => fns.reduceRight((value, fn) => fn(value), data);
 

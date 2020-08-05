@@ -47,13 +47,6 @@ const resolveConfig = (configurator) => {
   return { ...configs };
 };
 
-const resolveComposed = (maybeComposed) => {
-  if (typeof maybeComposed === "function") {
-    return () => maybeComposed();
-  }
-  return () => maybeComposed;
-}
-
 const useDispatch = ({ dispatch = dispatchHandler, ...configs }) => ({
   dispatch,
   ...configs,
@@ -70,7 +63,7 @@ const updateNotFoundState = () =>
   };
 
 const methodHandler = (method) =>
-  U.compose(updateState(method), useDispatch, resolveConfig, resolveComposed);
+  U.compose(updateState(method), useDispatch, resolveConfig);
 
 const notFoundHandler = () =>
   U.compose(updateNotFoundState(), useDispatch, resolveConfig);
@@ -99,6 +92,14 @@ export const getStatus = (status = 400, description = null) => ({
   status,
   ...(description && { description }),
 });
+
+export const withMiddlewares = (...fns) => {
+  const composedResult = U.asyncPipe(...fns);
+  return (responder) => ({
+    middlewaresResult: composedResult,
+    responder,
+  });
+};
 
 if (import.meta.main) {
   const app = tino.create();
