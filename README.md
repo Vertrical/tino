@@ -129,14 +129,16 @@ Middlewares offer you way to extend response by injecting additional information
 1. Check if user is admin and inject database into your controller:
 ```js
 import { withMiddlewares } from "tino.js";
+// Initial props are provided: https://github.com/Vertrical/tino#props-definition
 const auth = (props) => ({ isUser: true });
 const isAdmin = (props) => ({ isAdmin: false, ...props });
 const withDB = (props) => ({ coll: {}, ...props });
 const composed = withMiddlewares(auth, isAdmin, withDB);
 // Define your endpoint:
-const use = composed(({ isUser, isAdmin, coll }) => ({ resp: "Hello" }));
+const use = composed(({ isUser, isAdmin, coll }) => ({ resp: "Hello", status: /*...*/ }));
 app.get(() => ({ path: "/ping", use }));
 ```
+Any prop that is returned will be passed over to next function in chain, until the end - end result is what is passed to your controller.
 
 2. Exit early depending on if a precondition hasn't been met (protect the router):
 
@@ -152,7 +154,6 @@ const composed = withMiddlewares(auth, isAdmin, withDB);
 const use = composed(({ isUser, isAdmin, coll }) => ({ resp: "Hello" }));
 app.get(() => ({ path: "/ping", use }));
 // HTTP Response headers and content: (if you call "localhost:{port}/ping)
-
 `
 HTTP/1.1 401 Unauthorized
 content-length: 4
