@@ -60,7 +60,10 @@ const prepareContext = ({ req, state, bodyReader }) => {
 const controllerUseHandler = async ({ maybeFunction, ctx }) => {
   let res;
   const { method, url } = ctx.req;
-  const shakeCtx = U.dissoc('req', U.dissoc('state', ctx));
+  const shakeCtx = U.dissoc(
+    "req",
+    U.dissoc("state", U.dissoc("bodyReader", U.dissoc("use", ctx))),
+  );
   shakeCtx.req = { method, url };
   if (U.isAsyncFunction(maybeFunction)) {
     res = await maybeFunction({ ...shakeCtx });
@@ -191,10 +194,15 @@ export const tryComposedMiddlewares = async (
     return { ctx, ...responseDefinition };
   }
   try {
+    const shakeCtx = {
+      pathPattern: ctx.pathPattern,
+      matchedPath: ctx.matchedPath,
+      req: { method: ctx.req.method, url: ctx.req.url },
+    };
     const newProps = await responseDefinition.use.middlewaresResult(
-      { ctx, ...responseDefinition },
+      { ...shakeCtx, ...U.dissoc("use", responseDefinition) },
     );
-    Object.assign(responseDefinition, { ...U.dissoc("ctx", newProps) });
+    Object.assign(responseDefinition, newProps);
     responseDefinition.use = responseDefinition.use.responder;
   } catch (e) {
     if (!U.isObject(e) || !e.resp && !e.status) {
@@ -214,8 +222,8 @@ export const processRequest = U.asyncCompose(
   resolveResponse,
   handleNotFound,
   handleUse,
-  resolveRequestBody,
   tryComposedMiddlewares,
+  resolveRequestBody,
   prepareContext,
 );
 

@@ -27,7 +27,7 @@ Deno.test("http_server POST", async () => {
 });
 
 Deno.test("tryComposedMiddlewares", async () => {
-  const ctx = {};
+  const ctx = { req: {} };
   const query = {};
   const params = {};
   const status = 203;
@@ -37,16 +37,17 @@ Deno.test("tryComposedMiddlewares", async () => {
   const withMiddlewaresResult = await tryComposedMiddlewares(
     { ctx, query, params, use },
   );
+  console.log('withMiddlewaresResult', withMiddlewaresResult);
   assertEquals(
+    withMiddlewaresResult,
     {
-      ctx: {},
+      ctx: { req: {} },
       query: {},
       params: {},
       use: responder,
       isUser: true,
       isAdmin: false,
       status,
-    },
-    withMiddlewaresResult,
+    }
   );
 });
