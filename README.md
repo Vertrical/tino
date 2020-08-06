@@ -5,7 +5,7 @@ HTTP server for Deno with local JSON REST API for rapid prototyping.
 ## Install and Use
 
 1. Install Deno: https://deno.land/#installation
-2. Try it out: `$ deno run --allow-net --allow-read --allow-write https://deno.land/x/tino@v1.0.4/tino.js`
+2. Try it out: `$ deno run --allow-net --allow-read --allow-write https://deno.land/x/tino@v1.0.5/tino.js`
 
 Internally Tino uses `jsondb responder` which opens `/api` path for playing around. It uses `db.json` file by default as a database.
 
@@ -22,7 +22,7 @@ All tests are included in `./tests` directory.
 
 ```js
 // app.js
-import tino from "https://deno.land/x/tino@v1.0.4/tino.js";
+import tino from "https://deno.land/x/tino@v1.0.5/tino.js";
 const app = tino.create();
 const controller = () => ({ resp: "pong", status: 200 }) // must return { resp, status?, type? }
 app.get(() => ({ path: "/ping", use: controller }));
@@ -203,9 +203,9 @@ Each response is wrapped with `response` parent, like:
 ```js
 import tino, { jsondb } from "tino.js";
 const app = tino.create();
-app.any(() => ({ path: "/api", use: jsondb() })); // notice the ()
+app.any(() => ({ path: "/api", use: jsondb(), root: true })); // notice the ()
 // If you want some other namespace
-app.any(() => ({ path: "/awesome-api", use: jsondb() }));
+app.any(() => ({ path: "/awesome-api", use: jsondb(), root: true }));
 tino.listen({ app });
 ```
 (Please note that `jsondb` must be called. This is because it is a higher order function.)
@@ -241,7 +241,7 @@ You can see many examples in [tests/requests.http](https://github.com/Vertrical/
 
 If you want to change endpoint from `/api` to something else, just replace it:
 ```js
-app.any(() => ({ path: "/myapi", use: jsondb() }));
+app.any(() => ({ path: "/myapi", use: jsondb(), root: true }));
 
 // you can optionally "close" /api
 app.any(() => ({ path: "/api", status: 404 }));
@@ -260,7 +260,7 @@ deno run --allow-net --allow-read tino.js --dry=true
 
 In your code you can achieve same by passing `true` to `jsondb` responder:
 ```js
-app.get(() => ({ path: "/ping", use: jsondb(true) }));
+app.get(() => ({ path: "/ping", use: jsondb(true), root: true }));
 ```
 
 ### Custom port
