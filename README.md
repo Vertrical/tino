@@ -250,26 +250,6 @@ app.any(() => ({ path: "/api", status: 404 }));
 ```
 Remember that you need to create file `db.json` yourself. If not, the response will be empty and status 404.
 
-### When to use `use` and `resp`?
-
-`use` is recommended way to define your controllers. It uses `resp` as return type and can be anything, objects, primitives and functions. `resp` can be used directly but then `status` is always 200. It's just syntactic sugar so you can write shorter definitions if you don't care about statuses. For example these two definitions are the same:
-```js
-app.get(() => ({ path: "/ping", use: () => ({ resp: "pong", status: 200 }) }));
-app.get(() => ({ path: "/ping", resp: "pong" }));
-```
-
-Use `use` (a responder) when you want:
-1. complete control over HTTP statuses
-2. extend Tino's functionality
-3. create namespaces
-
-For example you want a namespace `/swapi` to handle Star Wars API, so you can make functionality for this and use it with Tino:
-```js
-import swapi from "https://some.location.com/swapi.js";
-app.any(() => ({ path: "/swapi", use: swapi }));
-```
-The only requirement is that it returns `{ resp, status?, type? }` at the end, so it's your responsibility to handle HTTP statuses and types with your internal logic.
-
 ## CLI and options for Tino and jsondb
 
 ### Dry run for jsondb
