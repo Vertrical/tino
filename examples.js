@@ -1,4 +1,4 @@
-import tino, { withMiddlewares } from "./tino.js";
+import tino, { withMiddlewares } from "https://deno.land/x/tino@v1.0.3/tino.js";
 const app = tino.create();
 
 // Basic and preferred
