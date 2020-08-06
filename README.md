@@ -5,7 +5,7 @@ HTTP server for Deno with local JSON REST API for rapid prototyping.
 ## Install and Use
 
 1. Install Deno: https://deno.land/#installation
-2. Try it out: `$ deno run --allow-net --allow-read --allow-write https://raw.githubusercontent.com/Vertrical/tino/develop/tino.js`
+2. Try it out: `$ deno run --allow-net --allow-read --allow-write https://deno.land/x/tino@v1.0.3/tino.js`
 
 Internally Tino uses `jsondb responder` which opens `/api` path for playing around. It uses `db.json` file by default as a database.
 
@@ -22,7 +22,7 @@ All tests are included in `./tests` directory.
 
 ```js
 // app.js
-import tino from "https://raw.githubusercontent.com/Vertrical/tino/develop/tino.js";
+import tino from "https://deno.land/x/tino@v1.0.3/tino.js";
 const app = tino.create();
 const controller = () => ({ resp: "pong", status: 200 }) // must return { resp, status?, type? }
 app.get(() => ({ path: "/ping", use: controller }));
