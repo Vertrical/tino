@@ -1,4 +1,4 @@
-import tino, { withMiddlewares } from "https://deno.land/x/tino@v1.0.4/tino.js";
+import tino, { withMiddlewares, jsondb } from "https://deno.land/x/tino@v1.0.5/tino.js";
 const app = tino.create();
 
 // Basic and preferred
@@ -9,6 +9,9 @@ app.get(() => ({ path: "/ping/:id/:param/:type", use }));
 // Very basic (status 200 is default)
 app.get(() => ({ path: "/ping-simple", resp: "pong-simple" }));
 app.get(() => ({ path: "/ping-simple-func", resp: () => "pong-simple-func" }));
+
+// Make other API endpoints
+app.get(() => ({ path: "/api/v2", use: jsondb(true), root: true }));
 
 // Use middlewares
 const withAuth = (props) => {
