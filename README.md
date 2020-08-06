@@ -71,6 +71,7 @@ If defined as a function, `resp` receives following parameters:
 4. `custom params` - anything else provided to method definition, except `path`, `resp` or `use`
 5. `matchedPath` - information about path regex
 6. `pathPattern` - information about path definition
+7. `req` - in form of `{ method, url }`
 7. Any other parameters coming from middlewares
 
 Basically you can test this with following have-it-all definition:

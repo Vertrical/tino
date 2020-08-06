@@ -37,7 +37,6 @@ Deno.test("tryComposedMiddlewares", async () => {
   const withMiddlewaresResult = await tryComposedMiddlewares(
     { ctx, query, params, use },
   );
-  console.log('withMiddlewaresResult', withMiddlewaresResult);
   assertEquals(
     withMiddlewaresResult,
     {
@@ -48,6 +47,6 @@ Deno.test("tryComposedMiddlewares", async () => {
       isUser: true,
       isAdmin: false,
       status,
-    }
+    },
   );
 });

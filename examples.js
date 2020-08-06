@@ -78,11 +78,13 @@ app.get(() => ({
 }));
 
 const composed2 = withMiddlewares(
-  () => ({ isAdmin: true }),
+  (props) => ({ isAdmin: true }),
 );
 app.post(() => ({
   path: "/post2/:id", // or optional with :id?
-  use: composed2((props) => ({ resp: { ...props } })),
+  use: composed2((props) => {
+    return { resp: { ...props } };
+  }),
   something: "else",
 }));
 
