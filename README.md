@@ -2,6 +2,8 @@
 
 HTTP server for Deno with local JSON REST API for rapid prototyping.
 
+_This is a first 1.0.0-alpha release and not yet ready for production. Please test it out and report any found issues._
+
 ## Install and Use
 
 1. Install Deno: https://deno.land/#installation
