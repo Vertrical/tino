@@ -74,7 +74,7 @@ myController = () => {
 }
 ```
 
-If you read further on about middlewares for example you'll see how this plays well with composition. These functions must be pure, easy to unit test and recursive.
+If you read further on about middlewares for example you'll see how this plays well with composition. These functions must be pure, easy to unit test and able to be recursive.
 
 ## Defining path parameters
 
