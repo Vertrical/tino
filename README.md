@@ -53,6 +53,29 @@ Tino application `app` supports following HTTP methods: GET, POST, PUT, PATCH, D
 
 The only requirement for controller `use` is that it must return `{ resp, status?, type? }` object. It can also be defined as async function.
 
+### Difference between Tino and "usual approach"
+
+What I've seen and used is that usually there are one or more global variables or internally modified variables through the request cycle. This results in following pseudo code:
+```
+myController = ctx => {
+  ctx.type = "text/html";
+  ctx.status = 200;
+  ctx.body = "<p>Greetings!</p>";
+}
+```
+
+While in Tino idea is that all functions are composed and there is no global variable but what you want in next step is what you pass further, through the chain. That might look like:
+```
+myController = () => {
+  const type = "text/html";
+  const status = 200;
+  const body = "<p>Greetings!</p>";
+  return { type, status, body };
+}
+```
+
+If you read further on about middlewares for example you'll see how this plays well with composition. These functions must be pure, easy to unit test and recursive.
+
 ## Defining path parameters
 
 Parameters are defined as `:param` in your path definition. Optionals are defined as `:param?`. Some examples:
@@ -283,5 +306,6 @@ You can find maintained list of exampes in [examples.js](https://github.com/Vert
 ## To-do list
 
 - [ ] Write TypeScript support (depends on https://github.com/microsoft/TypeScript/issues/38510)
+- [ ] The "after hooks", similar to middlewares but happening AFTER your controller
 - [ ] Cookies support
 - [ ] GraphQL responder for local prototyping (like jsondb)
