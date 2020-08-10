@@ -308,4 +308,4 @@ You can find maintained list of exampes in [examples.js](https://github.com/Vert
 - [ ] Write TypeScript support (depends on https://github.com/microsoft/TypeScript/issues/38510)
 - [ ] The "after hooks", similar to middlewares but happening AFTER your controller
 - [ ] Cookies support
-- [ ] GraphQL responder for local prototyping (like jsondb)
+- [ ] GraphQL responder for local prototyping (like jsondb for REST)
