@@ -107,7 +107,7 @@ app.get(() => ({ path: "/user/:id", use: ({ params }) => ({ resp: params.id }));
 
 ## `props` definition
 
-If defined as a function, `resp` receives following parameters:
+Controller `use` receives following parameters:
 
 1. `body` - body payload for POST, PUT or PATCH methods
 2. `params` - parameters from path definition, e.g. `/path/:id`
@@ -118,7 +118,7 @@ If defined as a function, `resp` receives following parameters:
 7. `req` - in form of `{ method, url }`
 7. Any other parameters coming from middlewares
 
-Basically you can test this with following have-it-all definition:
+Basically you can test this with following have-it-all definition: (read more about middlewares below)
 ```js
 // $ http POST :8000/post/123?q=1 foo=bar
 const composed = withMiddlewares(
@@ -152,6 +152,10 @@ Response received should be:
   "pathPattern": "/post/:id",
   "query": {
     "q": "1"
+  },
+  "req": {
+    "method": "POST",
+    "url": "/post2/123?q=1"
   },
   "something": "else"
 }
