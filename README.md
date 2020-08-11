@@ -12,12 +12,6 @@ Internally Tino uses `jsondb responder` which opens `/api` path for playing arou
 1. To see it already, copy it from tests: `$ cp ./tests/jsondb.test.json ./db.json`
 2. Open http://localhost:8000/api
 
-## Run tests
-
-Run: `$ deno test`
-
-All tests are included in `./tests` directory.
-
 ## Minimal configuration (custom endpoints)
 
 ```js
@@ -33,6 +27,18 @@ console.log(`Server running at 8000`);
 1. Now run the server: `$ deno run --allow-net app.js`
 2. Send a request: `$ http :8000/ping` (HTTPie, curl, Postman, etc.)
 3. Receive `"pong"` as `text/plain` content type
+
+### Simple way of setting responses and statuses:
+
+Since all functions are composed and pure, it's easy to unit test them:
+
+```js
+app.get(() => ({
+  path: "/notes/:id?",
+  use: ({ params, notes = { "123": { text: "Take a walk" } } }) => 
+  (notes[params.id] ? { resp: notes[params.id] } : { status: 404, resp: "Sorry, kinda nothing" })
+}));
+```
 
 ### Further configurations
 ```js
@@ -74,8 +80,7 @@ If you read further on about middlewares for example you'll see how this plays w
 
 Parameters are defined as `:param` in your path definition. Optionals are defined as `:param?`. Some examples:
 ```js
-app.get(() => ({ path: "/user/:id", use: () => ({ resp: ({ params }) => params.id }));
-app.get(() => ({ path: "/notes/:id?", use: () => ({ resp: ({ params, notes }) => params.id ? [] : notes }));
+app.get(() => ({ path: "/user/:id", use: ({ params }) => ({ resp: params.id }));
 ```
 
 ## `props` definition
@@ -292,6 +297,12 @@ Similarly, in your code you can pass it to `listen` method:
 // if you omit port, it will be 8000
 tino.listen({ app, port: 7777 });
 ```
+
+## Run tests
+
+Run: `$ deno test`
+
+All tests are included in `./tests` directory.
 
 ## Examples
 
