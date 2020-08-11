@@ -36,14 +36,8 @@ console.log(`Server running at 8000`);
 
 ### Further configurations
 ```js
-// Shorter: Use `resp` directly with status 200
-app.get(() => ({ path: "/ping", resp: "pong" }));
-
-// `resp` can be anything:
-app.get(() => ({ path: "/ping", use: () => ({ resp: () => "pong", status: 200 }) }));
-
-// Or (use: can also be async)
-app.get(() => ({ path: "/ping-async", use: () => ({ resp: async () => "pong", status: 201 }) }));
+app.get(() => ({ path: "/ping", resp: "pong" })); // Shorter: Use `resp` directly with status 200
+app.get(() => ({ path: "/ping-async", use: async () => ({ resp: "pong", status: 201 }) })); // `use` controller can also be async
 app.not_found(() => ({ resp: "Oops" }));
 ```
 
