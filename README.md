@@ -18,7 +18,7 @@ Internally Tino uses `jsondb responder` which opens `/api` path for playing arou
 // app.js
 import tino from "https://deno.land/x/tino@v1.0.5/tino.js";
 const app = tino.create();
-const controller = () => ({ resp: "pong", status: 200 }) // must return { resp, status?, type? }
+const controller = () => ({ resp: "pong", status: 200 }); // must return { resp, status?, type? }
 app.get(() => ({ path: "/ping", use: controller }));
 tino.listen({ app, port: 8000 });
 console.log(`Server running at 8000`);
@@ -38,6 +38,28 @@ app.get(() => ({
   use: ({ params, notes = { "123": { text: "Take a walk" } } }) => 
   (notes[params.id] ? { resp: notes[params.id] } : { status: 404, resp: "Sorry, kinda nothing" })
 }));
+```
+Resulting in:
+```zsh
+$ http :8000/notes/123
+----------------------
+HTTP/1.1 200 OK
+content-length: 22
+content-type: application/json
+
+{
+  "text": "Take a walk"
+}
+```
+
+```zsh
+$ http :8000/notes/123456789
+----------------------------
+HTTP/1.1 404 Not Found
+content-length: 20
+content-type: text/plain
+
+Sorry, kinda nothing
 ```
 
 ### Further configurations
