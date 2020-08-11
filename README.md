@@ -34,7 +34,7 @@ Since all functions are composed and pure, it's easy to unit test them:
 
 ```js
 app.get(() => ({
-  path: "/notes/:id?",
+  path: "/notes/:id",
   use: ({ params, notes = { "123": { text: "Take a walk" } } }) => 
   (notes[params.id] ? { resp: notes[params.id] } : { status: 404, resp: "Sorry, kinda nothing" })
 }));
@@ -100,7 +100,7 @@ If you read further on about middlewares for example you'll see how this plays w
 
 ## Defining path parameters
 
-Parameters are defined as `:param` in your path definition. Optionals are defined as `:param?`. Some examples:
+Parameters are defined as `:param` in your path definition. Optionals are defined as `:param?`. For example:
 ```js
 app.get(() => ({ path: "/user/:id", use: ({ params }) => ({ resp: params.id }));
 ```
