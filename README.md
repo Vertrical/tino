@@ -342,3 +342,7 @@ You can find maintained list of exampes in [examples.js](https://github.com/Vert
 - [ ] The "after hooks", similar to middlewares but happening AFTER your controller
 - [ ] Cookies support
 - [ ] GraphQL responder for local prototyping (like jsondb for REST)
+
+## Stay in touch
+
+You can follow us on Twitter https://twitter.com/tino_server or open issues here.
