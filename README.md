@@ -80,7 +80,8 @@ The only requirement for controller `use` is that it must return `{ resp, status
 ### Difference between Tino and "usual approach"
 
 What I've seen and used is that usually there are one or more global variables or internally modified variables through the request cycle. This results in following pseudo code:
-```
+
+```js
 myController = ctx => {
   ctx.type = "text/html";
   ctx.status = 200;
@@ -89,7 +90,8 @@ myController = ctx => {
 ```
 
 While in Tino idea is that all functions are composed and there is no global variable but what you want in next step is what you pass further, through the chain. That might look like:
-```
+
+```js
 myController = () => {
   const type = "text/html";
   const status = 200;
