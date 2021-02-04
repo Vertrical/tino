@@ -23,7 +23,7 @@ const app = tino.create();
 const controller = () => ({ resp: "pong", status: 200 }); // must return { resp, status?, type? }
 app.get(() => ({ path: "/ping", use: controller }));
 tino.listen({ app, port: 8000 });
-console.log(`Server running at 8000`);
+console.log('Server running at 8000');
 ```
 
 1. Now run the server: `$ deno run --allow-net app.js`
