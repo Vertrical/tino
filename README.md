@@ -1,8 +1,8 @@
+<img src="https://tinoserver.s3-eu-west-1.amazonaws.com/tino-transparent.png" width="250" alt="Tino Logo" />
+
 # Tino
 
 Tiny HTTP server for Deno, functionally composed.
-
-[![Tino Logo](https://tinoserver.s3-eu-west-1.amazonaws.com/tino-transparent.png)](https://github.com/Vertrical/tino)
 
 ## Install and Use
 
