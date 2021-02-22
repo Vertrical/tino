@@ -2,7 +2,7 @@
 
 Tiny HTTP server for Deno, functionally composed.
 
-[![Tino Logo](https://tinoserver.s3-eu-west-1.amazonaws.com/tino_180x180.png)](https://github.com/Vertrical/tino)
+[![Tino Logo](https://tinoserver.s3-eu-west-1.amazonaws.com/tino-transparent.png)](https://github.com/Vertrical/tino)
 
 ## Install and Use
 
