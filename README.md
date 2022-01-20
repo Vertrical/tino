@@ -1,3 +1,5 @@
+### UPDATE: We stopped maintaining this project. If you have any requests about this project please create an Issue.
+
 <img src="https://tinoserver.s3-eu-west-1.amazonaws.com/tino-transparent.png" width="250" alt="Tino Logo" />
 
 # Tino
